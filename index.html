@@ -59,8 +59,21 @@
         }
         ul {
             padding-left: 20px;
-            list-style-type: disc;
+            list-style-type: none; /* Remove default bullets */
             margin-top: 5px;
+        }
+        ul li {
+            padding-left: 1.2em;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        ul li::before {
+            content: "▪";
+            color: #2c5282;
+            font-size: 1.2em;
+            position: absolute;
+            left: 0;
+            top: -2px;
         }
         .section {
             margin-bottom: 20px;
@@ -80,6 +93,9 @@
             font-size: 14px;
             color: #777777;
             font-style: italic;
+        }
+        .work-item {
+            margin-bottom: 8px;
         }
         .two-column {
             display: grid;
@@ -110,10 +126,18 @@
         </header>
 
         <section class="section">
-            <h2>专业概览</h2>
-            <p>
-                十二年一线工程设计经验，具备给水排水与建筑学双专业背景。专注于城市更新、大型综合体等复杂项目的给排水系统设计与全流程管理工作。注重在实践中发现并思考系统性问题，致力于提供兼顾技术标准、成本控制与公共利益的综合解决方案。
-            </p>
+            <h2>核心优势</h2>
+            <ul>
+                <li>
+                    <strong>复合型持证背景：</strong>同时持有<strong>注册公用设备工程师（给水排水）、咨询工程师（投资）</strong>与<strong>给水排水设计高级工程师</strong>三大核心资格，具备扎实的法规与技术裁定能力。
+                </li>
+                <li>
+                    <strong>技术与投资双重视角：</strong>兼具给水排水工程与建筑学双学位，并掌握ESG投资分析方法，擅长在技术方案中融入成本与效益考量，提供超越单一维度的决策支持。
+                </li>
+                <li>
+                    <strong>复杂项目主导经验：</strong>具备12年甲级院及国企一线经验，曾作为专业负责人主导多个超50万方TOD、大型基建及城市更新项目，实战经验丰富。
+                </li>
+            </ul>
         </section>
 
         <section class="section">
@@ -170,8 +194,12 @@
 
         <section class="section">
             <h2>工作履历</h2>
-            <p><strong>2021.09 – 2025.03 | 广州市城市更新规划设计研究院有限公司</strong> | 注册给排水设计师</p>
-            <p><strong>2012.09 – 2021.09 | 多家甲级建筑设计院</strong> | 给排水工程师 / 助理工程师</p>
+            <div class="work-item"><p><strong>2021.09 – 2025.03 | 广州市城市更新规划设计研究院有限公司</strong> | 注册给排水设计师</p></div>
+            <div class="work-item"><p><strong>2021.05 – 2021.09 | 广东贝林建筑设计有限公司</strong> | 给排水设计工程师</p></div>
+            <div class="work-item"><p><strong>2016.11 – 2021.05 | 广东海外建筑设计院有限公司</strong> | 给排水设计工程师</p></div>
+            <div class="work-item"><p><strong>2016.04 – 2016.11 | 华南创图设计有限公司</strong> | 给排水设计助理工程师</p></div>
+            <div class="work-item"><p><strong>2014.04 – 2016.04 | 广东省机电建筑设计研究院</strong> | 给排水设计助理工程师</p></div>
+            <div class="work-item"><p><strong>2012.09 – 2014.03 | 广州市东建建筑设计院</strong> | 给排水设计助理工程师</p></div>
         </section>
 
         <section class="section">
