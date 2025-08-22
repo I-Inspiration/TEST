@@ -8,7 +8,6 @@ function startArcheryGame(container, onHitCallback) {
     powerBarContainer.innerHTML = `<div id="power-bar-dynamic" style="width: 100%; height: 0%; background: linear-gradient(to top, #fde047, #f97316, #ef4444); border-radius: 4px; transition: height 0.1s linear;"></div>`;
     powerBarContainer.style.cssText = "width: 12px; height: 120px; background-color: rgba(0,0,0,0.2); border-radius: 6px; border: 1px solid white; padding: 2px;";
     
-    // 将元素添加到容器中
     const gameWrapper = document.createElement('div');
     gameWrapper.className = 'flex items-center justify-center gap-4 w-full';
     gameWrapper.appendChild(canvas);
@@ -25,7 +24,7 @@ function startArcheryGame(container, onHitCallback) {
     let animationFrameId;
 
     function resizeCanvas() {
-        const size = Math.min(container.clientWidth - 80, 280); // 留出空间给力量条
+        const size = Math.min(container.clientWidth - 80, 280);
         canvas.width = size;
         canvas.height = size;
         maxPull = canvas.width * 0.4;
@@ -35,9 +34,10 @@ function startArcheryGame(container, onHitCallback) {
     function resetAnimation() {
         isPulling = false; isFlying = false;
         pullVector = { x: 0, y: 0 };
-        bow = { x: canvas.width * 0.9, y: canvas.height / 2, radius: canvas.height * 0.4 };
-        arrow = { x: bow.x, y: bow.y, length: canvas.width * 0.5, angle: Math.PI, speed: 0 };
-        target = { x: canvas.width * 0.2, y: canvas.height / 2, radius: canvas.height * 0.15 };
+        // 增加弓与靶的距离
+        bow = { x: canvas.width * 0.95, y: canvas.height / 2, radius: canvas.height * 0.4 };
+        arrow = { x: bow.x, y: bow.y, length: canvas.width * 0.6, angle: Math.PI, speed: 0 };
+        target = { x: canvas.width * 0.15, y: canvas.height / 2, radius: canvas.height * 0.12 };
         powerBar.style.height = '0%';
         draw();
     }
@@ -55,7 +55,8 @@ function startArcheryGame(container, onHitCallback) {
         const pos = getEventPos(e);
         if (Math.hypot(pos.x - bow.x, pos.y - bow.y) < bow.radius * 1.2) {
             isPulling = true;
-            if (typeof Tone !== 'undefined' && window.synth) window.synth.triggerAttack("C2");
+            if (typeof initAudio === 'function') initAudio(); // 确保音效已初始化
+            if (window.synth) window.synth.triggerAttack("C2");
         }
     }
 
@@ -76,21 +77,70 @@ function startArcheryGame(container, onHitCallback) {
         arrow.angle = Math.atan2(pullVector.y, pullVector.x) + Math.PI;
         const powerRatio = Math.hypot(pullVector.x, pullVector.y) / maxPull;
         powerBar.style.height = `${powerRatio * 100}%`;
-        if (typeof Tone !== 'undefined' && window.synth) window.synth.setNote(Tone.Frequency("C2").transpose(powerRatio * 24));
+        if (window.synth) window.synth.setNote(Tone.Frequency("C2").transpose(powerRatio * 24));
     }
 
     function onInteractionEnd(e) {
         e.preventDefault();
         if (!isPulling) return;
         isPulling = false;
-        if (typeof Tone !== 'undefined' && window.synth) window.synth.triggerRelease();
+        if (window.synth) window.synth.triggerRelease();
         const pullDistance = Math.hypot(pullVector.x, pullVector.y);
         if (pullDistance > 10) {
             isFlying = true;
-            arrow.speed = (pullDistance / maxPull) * 25;
-            if (typeof Tone !== 'undefined' && window.synth) window.synth.triggerAttackRelease("G4", "0.2");
+            arrow.speed = (pullDistance / maxPull) * 30; // 调整速度系数
+            if (window.synth) window.synth.triggerAttackRelease("G4", "0.2");
         }
         pullVector = { x: 0, y: 0 };
+    }
+
+    function drawArrow() {
+        ctx.save();
+        const nockX = isFlying ? arrow.x : bow.x + pullVector.x;
+        const nockY = isFlying ? arrow.y : bow.y + pullVector.y;
+        ctx.translate(nockX, nockY);
+        ctx.rotate(arrow.angle);
+        
+        // 箭身
+        ctx.strokeStyle = '#693815'; // Brown
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(arrow.length, 0);
+        ctx.stroke();
+
+        // 箭头 (新样式)
+        ctx.fillStyle = '#555'; // Dark gray
+        ctx.beginPath();
+        ctx.moveTo(arrow.length, 0);
+        ctx.lineTo(arrow.length - 20, -6);
+        ctx.lineTo(arrow.length - 20, 6);
+        ctx.closePath();
+        ctx.fill();
+
+        // 箭羽 (新样式)
+        ctx.fillStyle = '#FFF';
+        ctx.strokeStyle = '#AAA';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(5, 0);
+        ctx.lineTo(20, -6);
+        ctx.lineTo(25, -5);
+        ctx.lineTo(10, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(5, 0);
+        ctx.lineTo(20, 6);
+        ctx.lineTo(25, 5);
+        ctx.lineTo(10, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
     }
 
     function draw() {
@@ -108,17 +158,8 @@ function startArcheryGame(container, onHitCallback) {
         const stringNockY = bow.y + pullVector.y;
         ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(bow.x, bow.y - bow.radius); ctx.lineTo(stringNockX, stringNockY); ctx.lineTo(bow.x, bow.y + bow.radius); ctx.stroke();
-        // Draw Arrow
-        ctx.save();
-        const nockX = isFlying ? arrow.x : bow.x + pullVector.x;
-        const nockY = isFlying ? arrow.y : bow.y + pullVector.y;
-        ctx.translate(nockX, nockY);
-        ctx.rotate(arrow.angle);
-        ctx.fillStyle = '#A0522D'; ctx.strokeStyle = '#693815'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(arrow.length, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(arrow.length, 0); ctx.lineTo(arrow.length - 15, -5); ctx.lineTo(arrow.length - 15, 5); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -5); ctx.lineTo(15, 5); ctx.closePath(); ctx.fill();
-        ctx.restore();
+        
+        drawArrow();
     }
     
     function update() {
@@ -129,7 +170,7 @@ function startArcheryGame(container, onHitCallback) {
             const tipY = arrow.y + arrow.length * Math.sin(arrow.angle);
             if (Math.hypot(tipX - target.x, tipY - target.y) < target.radius) {
                 isFlying = false;
-                if (typeof Tone !== 'undefined' && window.synth) window.synth.triggerAttackRelease("C5", "0.5");
+                if (window.synth) window.synth.triggerAttackRelease("C5", "0.5");
                 setTimeout(onHitCallback, 800);
             }
             if (tipX < 0 || tipX > canvas.width || tipY < 0 || tipY > canvas.height) {
