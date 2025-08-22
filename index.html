@@ -3,218 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>杨孝宇 - 个人简历</title>
+    <title>百无聊赖研究院 - 随机旅行</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background-color: #ffffff;
-            color: #333333;
-            line-height: 1.8;
-            margin: 0;
-            padding: 0;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            touch-action: none; /* 防止在 canvas 上拖动时页面滚动 */
         }
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 40px;
-            border: 1px solid #f0f0f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        #map {
+            height: 100vh;
+            width: 100vw;
+            z-index: 10;
         }
-        h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin: 0 0 5px 0;
-            text-align: center;
-            letter-spacing: 2px;
+        .screen {
+            z-index: 20;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
         }
-        .contact-info {
-            text-align: center;
-            font-size: 14px;
-            color: #555555;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #eeeeee;
-            padding-bottom: 20px;
+        .hidden-screen {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
         }
-        .contact-info span {
-            margin: 0 10px;
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
-        h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c5282; /* A calm, professional blue */
-            border-bottom: 2px solid #2c5282;
-            padding-bottom: 8px;
-            margin-top: 30px;
-            margin-bottom: 20px;
+        .arrow-btn {
+            transition: all 0.3s ease;
         }
-        h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 20px;
-            margin-bottom: 10px;
+        .arrow-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        p, li {
-            font-size: 15px;
-            color: #444444;
+        .heart-btn:hover {
+            transform: scale(1.2);
+            color: #ef4444; /* red-500 */
         }
-        ul {
-            padding-left: 20px;
-            list-style-type: none; /* Remove default bullets */
-            margin-top: 5px;
+        .break-btn:hover {
+            transform: scale(1.2);
+            color: #3b82f6; /* blue-500 */
         }
-        ul li {
-            padding-left: 1.2em;
-            position: relative;
-            margin-bottom: 10px;
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
-        ul li::before {
-            content: "▪";
-            color: #2c5282;
-            font-size: 1.2em;
-            position: absolute;
-            left: 0;
-            top: -2px;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .section {
-            margin-bottom: 20px;
+        #animation-canvas {
+            cursor: grab;
+            border-radius: 1rem;
         }
-        .project-item {
-            margin-bottom: 25px;
-        }
-        .project-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        .project-title h3 {
-            margin-top: 0;
-        }
-        .project-title span {
-            font-size: 14px;
-            color: #777777;
-            font-style: italic;
-        }
-        .work-item {
-            margin-bottom: 8px;
-        }
-        .two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-        @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-                padding: 20px;
-            }
-            .two-column {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
+        #animation-canvas:active {
+            cursor: grabbing;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>杨孝宇</h1>
-            <div class="contact-info">
-                <span>137-6078-9649</span> |
-                <span>ingrido_o@126.com</span> |
-                <span>广州</span> |
-                <span>35岁</span>
-           <br> <class="contact-info">
-                <span>给水排水设计高级工程师</span> |
-                <span>注册公用设备工程师(给水排水)</span> |
-                <span>咨询工程师(投资) </span>
-            </div>
-        </header>
+<body class="bg-gray-100 overflow-hidden">
 
-        <section class="section">
-            <h2>核心能力</h2>
-            <ul>
-                <li>
-                    <strong>技术审查与合规把控：</strong>具备<strong>注册公用设备工程师</strong>的专业资格与<strong>高级工程师</strong>的专业技术能力，能够对项目设计方案的规范性、安全性进行比选审核，根据项目经验提出切实可行的意见和建议。
-                </li>
-                <li>
-                    <strong>项目投资与经济性评价：</strong>持有<strong>咨询工程师（投资）</strong>资格，擅长从项目全生命周期的角度进行经济性分析与评价，能够为政府投资项目的决策提供专业依据，确保公共资金的有效利用。
-                </li>
-                <li>
-                    <strong>跨专业统筹与系统性思维：</strong>得益于给水排水与建筑学的</strong>双专业背景</strong>，能够在项目早期预见并解决跨专业的技术衔接难题，从系统层面优化设计，提升项目整体实施效率。
-                </li>
-            </ul>
-        </section>
+    <div id="map"></div>
 
-        <section class="section">
-            <h2>项目经验</h2>
-            <div class="project-item">
-                <div class="project-title">
-                    <h3>紫来大街片区微改造项目</h3>
-                    <span>(给排水专业总负责人)</span>
-                </div>
-                <ul>
-                    <li>针对旧城管网老化、权属复杂等难题，主导制定了兼顾海绵城市理念与雨污分流的整体改造方案。</li>
-                    <li>在项目实践中，深入研究了因各专营单位改造时序不同步而导致的“马路拉链”问题，并将思考与解决方案，提炼为具体建议，在参与《广州市老旧小区改造内容及标准指引》修订工作中为政策建言，致力于从顶层设计层面提升项目实施效率。</li>
-                </ul>
-            </div>
-            <div class="project-item">
-                <div class="project-title">
-                    <h3>三亚崖州新城综合工程</h3>
-                    <span>(给排水专业总负责人)</span>
-                </div>
-                <ul>
-                    <li>负责51.5万㎡含酒店、商业、办公的多业态综合体给排水消防系统设计，确保了复杂系统运行的稳定与安全。</li>
-                    <li>在项目初期即主导应用BIM技术进行管线综合，提前识别并解决了上百处关键碰撞点，显著提升了设计质量与后期施工效率。</li>
-                </ul>
-            </div>
-            <div class="project-item">
-                <div class="project-title">
-                    <h3>白云机场三期扩建工程周边基建项目</h3>
-                    <span>(给排水专业总负责人)</span>
-                </div>
-                <ul>
-                    <li>负责12万㎡含高层住宅及学校的重点基建项目，独立完成从初步设计到施工图的全阶段设计。</li>
-                    <li>在方案阶段即主动牵头多专业协同，提出的消防与人防交叉节点优化方案被采纳，有效避免了后期施工中的重大返工风险。</li>
-                </ul>
-            </div>
-        </section>
-
-        <div class="two-column">
-            <section class="section">
-                <h2>职业资格</h2>
-                <ul>
-                    <li>给水排水设计高级工程师 (2024)</li>
-                    <li>咨询工程师(投资) (2023)</li>
-                    <li>注册公用设备工程师(给水排水) (2020)</li>
-                </ul>
-            </section>
-            <section class="section">
-                <h2>奖项与荣誉</h2>
-                <ul>
-                    <li>广州市优秀工程勘察设计奖二等奖 (2024)</li>
-                    <li>广东省第五届BIM应用大赛设计组二等奖 (2023)</li>
-                    <li>广州市城市更新规划设计研究院 优秀研究/进步之星 (2023)</li>
-                    <li>广东海外建筑设计院 先进工作者 (2018)</li>
-                </ul>
-            </section>
+    <!-- 初始界面 -->
+    <div id="intro-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="card text-center p-8 rounded-2xl shadow-2xl max-w-sm mx-4">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">百无聊赖研究院</h1>
+            <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
+            <button id="locate-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                🎯 定位我的位置
+            </button>
         </div>
-
-        <section class="section">
-            <h2>工作履历</h2>
-            <div class="work-item"><p><strong>2021.09 – 2025.03 | 广州市城市更新规划设计研究院有限公司</strong> | 注册给排水设计师</p></div>
-            <div class="work-item"><p><strong>2021.05 – 2021.09 | 广东贝林建筑设计有限公司</strong> | 给排水设计工程师</p></div>
-            <div class="work-item"><p><strong>2016.11 – 2021.05 | 广东海外建筑设计院有限公司</strong> | 给排水设计工程师</p></div>
-            <div class="work-item"><p><strong>2016.04 – 2016.11 | 华南创图设计有限公司</strong> | 给排水设计助理工程师</p></div>
-            <div class="work-item"><p><strong>2014.04 – 2016.04 | 广东省机电建筑设计研究院</strong> | 给排水设计助理工程师</p></div>
-            <div class="work-item"><p><strong>2012.09 – 2014.03 | 广州市东建建筑设计院</strong> | 给排水设计助理工程师</p></div>
-        </section>
-
-        <section class="section">
-            <h2>教育背景</h2>
-            <p><strong>长沙理工大学</strong> | 给水排水工程 | 本科</p>
-            <p><strong>广东工业大学</strong> | 建筑学 | 本科（第二学历）</p>
-        </section>
-
     </div>
+    
+    <!-- 箭选择界面 -->
+    <div id="arrow-selection-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 hidden-screen">
+        <div class="card text-center p-8 rounded-2xl shadow-2xl max-w-lg mx-4">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">请选择你的命运之箭</h2>
+            <p class="text-gray-500 mb-8">不同的箭，将带你探索不同维度的未知</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button data-type="province" class="arrow-btn p-6 bg-white rounded-xl shadow-md">
+                    <div class="text-4xl mb-2">省级</div>
+                    <p class="text-gray-500">跨越山海，遇见远方</p>
+                </button>
+                <button data-type="city" class="arrow-btn p-6 bg-white rounded-xl shadow-md">
+                    <div class="text-4xl mb-2">市级</div>
+                    <p class="text-gray-500">全国漫游，随机一城</p>
+                </button>
+                <button data-type="district" class="arrow-btn p-6 bg-white rounded-xl shadow-md">
+                    <div class="text-4xl mb-2">区级</div>
+                    <p class="text-gray-500">街角巷尾，发现惊喜</p>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新增：射箭动画界面 -->
+    <div id="animation-screen" class="screen absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 hidden-screen">
+        <div class="card p-4 rounded-2xl shadow-2xl">
+            <canvas id="animation-canvas" width="800" height="400"></canvas>
+        </div>
+        <p class="text-white text-lg mt-4 font-semibold">向后拖动弓箭，松手发射！</p>
+    </div>
+
+
+    <!-- 结果展示界面 -->
+    <div id="result-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 hidden-screen">
+        <div class="card text-center p-8 rounded-2xl shadow-2xl max-w-sm mx-4">
+            <p class="text-gray-600 mb-2">命运的指引是...</p>
+            <h2 id="destination-name" class="text-4xl font-bold text-blue-600 mb-6"></h2>
+            <div class="flex justify-center space-x-12">
+                <button id="heart-btn" class="heart-btn text-5xl text-gray-300 transition-all duration-300">❤️</button>
+                <button id="break-btn" class="break-btn text-5xl text-gray-300 transition-all duration-300">💔</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 详情介绍界面 -->
+    <div id="details-screen" class="screen absolute inset-0 bg-white p-6 md:p-8 overflow-y-auto hidden-screen">
+        <div class="max-w-3xl mx-auto">
+            <button id="back-btn" class="mb-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                &larr; 重新选择
+            </button>
+            <div id="details-content" class="prose lg:prose-xl">
+                <!-- AI 生成的内容会放在这里 -->
+            </div>
+             <div id="loader" class="hidden justify-center items-center mt-8">
+                <div class="loader"></div>
+                <p class="ml-4 text-gray-600">正在为您探索当地的美食和景点...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引用外部数据文件 -->
+    <script src="data.js"></script>
+
+    <script>
+        // --- DOM 元素获取 ---
+        // 注意：chinaData 变量现在来自于 data.js 文件
+        const locateBtn = document.getElementById('locate-btn');
+        const introScreen = document.getElementById('intro-screen');
+        const arrowSelectionScreen = document.getElementById('arrow-selection-screen');
+        const animationScreen = document.getElementById('animation-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const detailsScreen = document.getElementById('details-screen');
+        const destinationName = document.getElementById('destination-name');
+        const heartBtn = document.getElementById('heart-btn');
+        const breakBtn = document.getElementById('break-btn');
+        const backBtn = document.getElementById('back-btn');
+        const detailsContent = document.getElementById('details-content');
+        const loader = document.getElementById('loader');
+
+        let map;
+        let userLocation = {
+            province: "广东", // 默认省份
+            city: "深圳市",     // 默认城市
+            lat: 22.54,
+            lng: 114.05
+        };
+        let currentShotType = ''; // 用于存储当前选择的箭类型
+
+        // --- 地图初始化 ---
+        map = L.map('map').setView([35.8617, 104.1954], 4); // 默认中国中心
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // --- 屏幕切换逻辑 ---
+        const screens = {
+            intro: introScreen,
+            arrows: arrowSelectionScreen,
+            animation: animationScreen,
+            result: resultScreen,
+            details: detailsScreen
+        };
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.add('hidden-screen'));
+            if (screens[screenName]) {
+                screens[screenName].classList.remove('hidden-screen');
+            }
+        }
+
+        // --- 核心功能 ---
+
+        // 1. 定位
+        locateBtn.addEventListener('click', () => {
+            locateBtn.textContent = '正在定位...';
+            locateBtn.disabled = true;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    userLocation.lat = latitude;
+                    userLocation.lng = longitude;
+                    console.log(`定位成功: ${latitude}, ${longitude}. 演示将使用默认地点 ${userLocation.province}-${userLocation.city}`);
+                    map.setView([latitude, longitude], 12);
+                    L.marker([latitude, longitude]).addTo(map).bindPopup('你在这里！').openPopup();
+                    showScreen('arrows');
+                }, () => {
+                    alert('定位失败！我们将使用一个默认位置开始游戏。');
+                    map.setView([userLocation.lat, userLocation.lng], 12);
+                    L.marker([userLocation.lat, userLocation.lng]).addTo(map).bindPopup('我们从这里开始！').openPopup();
+                    showScreen('arrows');
+                });
+            } else {
+                alert('您的浏览器不支持地理定位。');
+                map.setView([userLocation.lat, userLocation.lng], 12);
+                showScreen('arrows');
+            }
+        });
+
+        // 2. 选择箭并启动射箭动画
+        arrowSelectionScreen.addEventListener('click', (e) => {
+            const button = e.target.closest('.arrow-btn');
+            if (!button) return;
+            currentShotType = button.dataset.type;
+            showScreen('animation');
+            startArcheryAnimation(); // 启动动画
+        });
+        
+        // 3. 生成目的地（动画结束后调用）
+        function generateDestination(type) {
+             try {
+                let destination = '';
+                if (type === 'province') {
+                    const provinces = Object.keys(chinaData);
+                    destination = provinces[Math.floor(Math.random() * provinces.length)];
+                } else if (type === 'city') {
+                    const allCities = [];
+                    for (const province in chinaData) {
+                        const citiesInProvince = Object.keys(chinaData[province]);
+                        allCities.push(...citiesInProvince);
+                    }
+                    destination = allCities[Math.floor(Math.random() * allCities.length)];
+                } else if (type === 'district') {
+                    if (chinaData[userLocation.province] && chinaData[userLocation.province][userLocation.city]) {
+                        const districts = chinaData[userLocation.province][userLocation.city];
+                        if (!districts || districts.length === 0) throw new Error(`当前城市 (${userLocation.city}) 没有区县数据。`);
+                        destination = districts[Math.floor(Math.random() * districts.length)];
+                    } else {
+                        console.warn(`默认城市 ${userLocation.city} 数据不完整, 将随机选择一个城市进行区级探索。`);
+                        const allCitiesWithDistricts = [];
+                        for (const province in chinaData) {
+                            for (const city in chinaData[province]) {
+                                if (chinaData[province][city] && chinaData[province][city].length > 0) allCitiesWithDistricts.push({ province, city });
+                            }
+                        }
+                        const randomCityInfo = allCitiesWithDistricts[Math.floor(Math.random() * allCitiesWithDistricts.length)];
+                        const districts = chinaData[randomCityInfo.province][randomCityInfo.city];
+                        destination = districts[Math.floor(Math.random() * districts.length)];
+                    }
+                }
+                destinationName.textContent = destination;
+                showScreen('result');
+            } catch (error) {
+                console.error(error);
+                alert("抱歉，生成目的地时出错。可能是数据不完整，请尝试其他选项。");
+                showScreen('arrows');
+            }
+        }
+
+        // 4. 处理结果
+        breakBtn.addEventListener('click', () => {
+            showScreen('arrows');
+        });
+
+        heartBtn.addEventListener('click', async () => {
+            showScreen('details');
+            loader.classList.remove('hidden');
+            loader.classList.add('flex');
+            detailsContent.innerHTML = '';
+            const destination = destinationName.textContent;
+            const prompt = `请为我详细介绍一下中国的旅行目的地：${destination}。请用热情、引人入胜的语气，重点介绍当地最值得体验的3-5个好玩的地方和3-5个特色美食。请用Markdown格式化你的回答，使用标题、列表等让内容更清晰。`;
+            
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "" 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`API 请求失败，状态码: ${response.status}`);
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    detailsContent.innerHTML = simpleMarkdownToHtml(text);
+                } else {
+                   detailsContent.innerHTML = `<p>抱歉，暂时无法获取关于“${destination}”的详细信息。</p>`;
+                }
+            } catch (error) {
+                console.error('获取目的地详情失败:', error);
+                detailsContent.innerHTML = `<p>哎呀，探索“${destination}”的旅途中遇到了一点小波折。</p>`;
+            } finally {
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            showScreen('arrows');
+        });
+        
+        function simpleMarkdownToHtml(md) {
+            let html = md;
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+            html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+            html = html.replace(/<\/li>\n<li>/gim, '</li><li>');
+            html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
+            html = html.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        }
+        
+        // --- 射箭动画逻辑 ---
+        function startArcheryAnimation() {
+            const canvas = document.getElementById('animation-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 响应式调整Canvas大小
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const size = Math.min(container.clientWidth, window.innerHeight * 0.7);
+                canvas.width = size;
+                canvas.height = size / 2;
+                resetAnimation(); // 窗口变化时重置
+            }
+
+            let isPulling = false;
+            let isFlying = false;
+            let startPullPos = { x: 0, y: 0 };
+            let pullDistance = 0;
+            
+            let bow = { x: canvas.width * 0.15, y: canvas.height / 2, radius: 60 };
+            let arrow = { x: bow.x, y: bow.y, length: 100, tipX: 0, tipY: 0, angle: 0, speed: 0 };
+            let target = { x: canvas.width * 0.85, y: canvas.height / 2, radius: 40 };
+
+            function resetAnimation() {
+                isPulling = false;
+                isFlying = false;
+                pullDistance = 0;
+                bow = { x: canvas.width * 0.15, y: canvas.height / 2, radius: 60 };
+                arrow = { x: bow.x, y: bow.y, length: 100, tipX: 0, tipY: 0, angle: 0, speed: 0 };
+                target = { x: canvas.width * 0.85, y: canvas.height / 2, radius: 40 };
+                draw();
+            }
+
+            function getMousePos(evt) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const clientX = evt.clientX || evt.touches[0].clientX;
+                const clientY = evt.clientY || evt.touches[0].clientY;
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            function onMouseDown(e) {
+                e.preventDefault();
+                if (isFlying) return;
+                startPullPos = getMousePos(e);
+                // 检查是否在弓箭附近点击
+                if (Math.abs(startPullPos.x - (bow.x + arrow.length/2)) < 50 && Math.abs(startPullPos.y - bow.y) < 50) {
+                    isPulling = true;
+                }
+            }
+
+            function onMouseMove(e) {
+                e.preventDefault();
+                if (!isPulling) return;
+                const currentPos = getMousePos(e);
+                pullDistance = Math.max(0, Math.min(80, startPullPos.x - currentPos.x));
+            }
+
+            function onMouseUp(e) {
+                e.preventDefault();
+                if (!isPulling) return;
+                isPulling = false;
+                if (pullDistance > 10) { // 只有拉开一定距离才发射
+                    isFlying = true;
+                    arrow.speed = pullDistance * 0.4;
+                    // 稍微增加一点随机性
+                    const randomAngle = (Math.random() - 0.5) * 0.1; // -0.05 to 0.05 radians
+                    arrow.angle = randomAngle;
+                }
+                pullDistance = 0;
+            }
+
+            function drawBow() {
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.arc(bow.x, bow.y, bow.radius, -Math.PI / 2, Math.PI / 2);
+                ctx.stroke();
+
+                // 弓弦
+                ctx.strokeStyle = '#555';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(bow.x, bow.y - bow.radius);
+                ctx.lineTo(bow.x - pullDistance, bow.y);
+                ctx.lineTo(bow.x, bow.y + bow.radius);
+                ctx.stroke();
+            }
+            
+            function drawArrow() {
+                ctx.save();
+                ctx.translate(arrow.x - pullDistance, arrow.y);
+                ctx.rotate(arrow.angle);
+                
+                ctx.fillStyle = '#A0522D';
+                ctx.strokeStyle = '#693815';
+                ctx.lineWidth = 4;
+
+                // 箭身
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(arrow.length, 0);
+                ctx.stroke();
+
+                // 箭头
+                ctx.beginPath();
+                ctx.moveTo(arrow.length, 0);
+                ctx.lineTo(arrow.length - 15, -5);
+                ctx.lineTo(arrow.length - 15, 5);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 箭羽
+                ctx.fillStyle = '#FFF';
+                ctx.beginPath();
+                ctx.moveTo(0,0);
+                ctx.lineTo(15, -5);
+                ctx.lineTo(15, 5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            function drawTarget() {
+                const colors = ['#FF4136', '#FFFFFF', '#FF4136', '#FFFFFF', '#FF4136'];
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillStyle = colors[i];
+                    ctx.beginPath();
+                    ctx.arc(target.x, target.y, target.radius * (1 - i * 0.2), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            function update() {
+                if (isFlying) {
+                    arrow.x += arrow.speed * Math.cos(arrow.angle);
+                    arrow.y += arrow.speed * Math.sin(arrow.angle);
+
+                    // 检查是否击中目标
+                    if (arrow.x + arrow.length >= target.x - target.radius) {
+                        isFlying = false;
+                        arrow.x = target.x - arrow.length; // 确保箭停在靶上
+                        
+                        // 命中后延迟切换界面
+                        setTimeout(() => {
+                            generateDestination(currentShotType);
+                        }, 800);
+                    }
+                }
+            }
+
+            function draw() {
+                ctx.fillStyle = '#87CEEB'; // 天空蓝背景
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                drawTarget();
+                drawBow();
+                drawArrow();
+            }
+
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // 清理旧的事件监听器，防止重复绑定
+            canvas.removeEventListener('mousedown', onMouseDown);
+            canvas.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            canvas.removeEventListener('touchstart', onMouseDown);
+            canvas.removeEventListener('touchmove', onMouseMove);
+            window.removeEventListener('touchend', onMouseUp);
+            window.removeEventListener('resize', resizeCanvas);
+            
+            // 绑定新的事件监听器
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('touchstart', onMouseDown);
+            canvas.addEventListener('touchmove', onMouseMove);
+            window.addEventListener('touchend', onMouseUp);
+            window.addEventListener('resize', resizeCanvas);
+            
+            resizeCanvas();
+            gameLoop();
+        }
+
+        // --- 初始状态 ---
+        showScreen('intro');
+
+    </script>
 </body>
 </html>
