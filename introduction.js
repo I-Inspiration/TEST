@@ -22,7 +22,7 @@ async function fetchIntroduction(destinationName, contentEl, loaderEl) {
 
     try {
         // 使用免费的 Gemini API，apiKey 留空
-        const apiKey = "AIzaSyA2L7yI3uB6aRZQMYFFfzekQeZyeS-0Pgc"; 
+        const apiKey = ""; 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
         
         const payload = { 
