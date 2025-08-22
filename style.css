@@ -1,0 +1,81 @@
+body {
+    font-family: "Microsoft YaHei", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #fafafa;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background: #ff4b4b;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#map-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+    position: relative;
+}
+
+#china-map {
+    max-width: 95%;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#control-panel {
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.btn-group button {
+    background-color: #ff4b4b;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    margin: 0.5rem;
+    color: white;
+    font-size: 1.1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-group button:hover {
+    background-color: #ff2e2e;
+}
+
+#result-container {
+    text-align: center;
+    margin: 2rem 1rem;
+    padding: 1rem;
+    border: 2px dashed #ff4b4b;
+    border-radius: 8px;
+    background-color: #fff5f5;
+}
+
+.hidden {
+    display: none;
+}
+
+.heart-icons {
+    font-size: 2rem;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+#travel-guide {
+    margin-top: 1rem;
+    text-align: left;
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
