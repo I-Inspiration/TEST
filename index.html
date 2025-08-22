@@ -1,56 +1,84 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>随机旅行</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机旅行</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<!-- 初始界面 -->
-<div id="intro-screen" class="screen">
-  <div class="card">
-    <h1>随机旅行</h1>
-    <p>下一站去哪？让命运决定你的旅行！</p>
-    <button id="locate-btn">🎯 定位我的位置</button>
-    <p id="locate-status"></p>
-  </div>
-</div>
-
-<!-- 箭选择界面 -->
-<div id="arrow-selection-screen" class="screen hidden-screen">
-  <div class="card">
-    <h2>请选择你的命运之箭</h2>
-    <div class="arrow-buttons">
-      <button class="arrow-btn" data-type="province">🎯省</button>
-      <button class="arrow-btn" data-type="city">🎯市</button>
-      <button class="arrow-btn" data-type="district">🎯区</button>
+    <div id="intro-panel" class="panel-overlay">
+        <div class="card text-center p-8 rounded-2xl max-w-sm mx-4">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">随机旅行</h1>
+            <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
+            <button id="locate-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">🎯 定位我的位置</button>
+            <p id="locate-status" class="text-sm text-gray-500 mt-2 h-4"></p>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- 射箭动画界面 -->
-<div id="animation-screen" class="screen hidden-screen">
-  <div class="animation-card">
-    <canvas id="animation-canvas"></canvas>
-    <button id="shoot-btn">拉弓射箭</button>
-  </div>
-</div>
+    <div id="arrow-selection-panel" class="panel-overlay hidden">
+        <div class="card p-8 rounded-2xl max-w-md mx-4">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">请选择你的命运之箭</h2>
+            <div class="space-y-4">
+                <div data-type="province" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
+                    <div>
+                        <div class="font-bold text-lg text-red-600">省级之箭</div>
+                        <div class="text-sm text-gray-500">跨越山海，遇见远方</div>
+                    </div>
+                </div>
+                <div data-type="city" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
+                    <div>
+                        <div class="font-bold text-lg text-blue-600">市级之箭</div>
+                        <div class="text-sm text-gray-500">全国漫游，随机一城</div>
+                    </div>
+                </div>
+                <div data-type="district" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
+                    <div>
+                        <div class="font-bold text-lg text-green-600">区级之箭</div>
+                        <div class="text-sm text-gray-500">街角巷尾，发现惊喜</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- 结果展示界面 -->
-<div id="result-screen" class="screen hidden-screen">
-  <div class="card">
-    <p>命运的指引是...</p>
-    <h2 id="destination-name"></h2>
-    <button id="restart-btn">↩ 重新选择</button>
-  </div>
-</div>
+    <div id="animation-panel" class="panel-overlay hidden">
+        <div class="card p-4 rounded-2xl">
+            <canvas id="animation-canvas" width="300" height="150"></canvas>
+        </div>
+    </div>
+    
+    <div id="result-panel" class="panel-overlay hidden">
+        <div class="card p-8 rounded-2xl max-w-sm mx-4 text-center">
+            <p class="text-gray-600 mb-2">命运的指引是...</p>
+            <h2 id="destination-name" class="text-5xl font-bold text-blue-600 mb-8 leading-tight"></h2>
+            <div class="flex justify-center space-x-12">
+                <button id="heart-btn" class="heart-btn text-5xl text-gray-300 transition-transform">❤️</button>
+                <button id="break-btn" class="break-btn text-5xl transition-transform">💔</button>
+            </div>
+        </div>
+    </div>
 
-<script src="app.js"></script>
+    <div id="details-panel" class="panel-overlay hidden">
+        <div class="w-full max-w-4xl h-full bg-white shadow-2xl flex flex-col">
+             <div class="p-6 border-b">
+                <button id="back-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">&larr; 返回</button>
+             </div>
+             <div id="details-container" class="prose p-6 overflow-y-auto flex-grow">
+                <div id="details-content"></div>
+             </div>
+        </div>
+    </div>
+    
+    <script src="app.js" defer></script>
 </body>
 </html>
