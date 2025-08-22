@@ -97,7 +97,7 @@
     <div id="result-panel" class="panel-overlay hidden">
         <div class="card p-8 rounded-2xl max-w-sm mx-4 text-center">
             <p class="text-gray-600 mb-2">命运的指引是...</p>
-            <h2 id="destination-name" class="text-5xl font-bold text-blue-600 mb-8 break-all"></h2>
+            <h2 id="destination-name" class="text-5xl font-bold text-blue-600 mb-8 leading-tight"></h2>
             <div class="flex justify-center space-x-12">
                 <button id="heart-btn" class="heart-btn text-5xl text-gray-300 transition-transform">❤️</button>
                 <button id="break-btn" class="break-btn text-5xl transition-transform">💔</button>
@@ -131,6 +131,7 @@
             let map;
             let userLocation = { province: "广东", city: "深圳市" };
             let currentShotType = '';
+            let districtToCityMap = null; // 用于存储区到市的反向映射
 
             const dom = {
                 map: document.getElementById('map'),
@@ -156,13 +157,24 @@
                 attachEventListeners();
                 showPanel('intro');
             }
+            
+            // --- 新增：创建区 -> 市的反向查找地图 ---
+            function createDistrictMap() {
+                if (districtToCityMap || typeof districtsByCity === 'undefined') return;
+                districtToCityMap = {};
+                for (const province in districtsByCity) {
+                    for (const city in districtsByCity[province]) {
+                        for (const district of districtsByCity[province][city]) {
+                            districtToCityMap[district] = city;
+                        }
+                    }
+                }
+            }
 
             function attachEventListeners() {
                 dom.locateBtn.addEventListener('click', handleLocation);
                 dom.panels.arrows.addEventListener('click', handleArrowSelection);
                 dom.heartBtn.addEventListener('click', handleHeartClick);
-                // --- 修改核心 ---
-                // 点击心碎按钮，重新执行生成目的地的函数
                 dom.breakBtn.addEventListener('click', generateDestination);
                 dom.backBtn.addEventListener('click', () => showPanel('arrows'));
             }
@@ -206,26 +218,42 @@
 
             function generateDestination() {
                 try {
-                    if (typeof provinces === 'undefined' || typeof cities === 'undefined' || typeof districtsByCity === 'undefined') {
-                        throw new Error('数据文件(data.js)未正确加载或内部变量名不正确。');
+                    if (typeof provinces === 'undefined') {
+                        throw new Error('数据文件(data.js)未正确加载。');
                     }
+                    
                     let destination = '';
+                    let destinationHTML = '';
+
                     if (currentShotType === 'province') {
                         destination = provinces[Math.floor(Math.random() * provinces.length)];
+                        destinationHTML = destination;
                     } else if (currentShotType === 'city') {
                         destination = cities[Math.floor(Math.random() * cities.length)];
+                        destinationHTML = destination;
                     } else if (currentShotType === 'district') {
+                        // --- 修改核心 ---
+                        createDistrictMap(); // 确保反向地图已创建
+                        let districtList;
                         const provinceData = districtsByCity[userLocation.province];
-                        const districtList = provinceData ? provinceData[userLocation.city] : null;
-                        if (districtList && districtList.length > 0) {
-                            destination = districtList[Math.floor(Math.random() * districtList.length)];
+                        const cityDistricts = provinceData ? provinceData[userLocation.city] : null;
+
+                        if (cityDistricts && cityDistricts.length > 0) {
+                            districtList = cityDistricts;
                         } else {
-                            const allDistricts = Object.values(districtsByCity).flatMap(p => Object.values(p)).flat();
-                            destination = allDistricts[Math.floor(Math.random() * allDistricts.length)];
+                            districtList = Object.values(districtsByCity).flatMap(p => Object.values(p)).flat();
                         }
+                        
+                        const randomDistrict = districtList[Math.floor(Math.random() * districtList.length)];
+                        const parentCity = districtToCityMap[randomDistrict] || ''; // 查找所属城市
+                        
+                        // 使用 HTML 格式化输出
+                        destinationHTML = `<span class='text-3xl text-gray-500'>${parentCity}</span><br>${randomDistrict}`;
                     }
-                    dom.destinationName.textContent = destination;
+                    
+                    dom.destinationName.innerHTML = destinationHTML;
                     showPanel('result');
+
                 } catch (error) {
                     alert(error.message);
                     showPanel('arrows');
@@ -234,8 +262,9 @@
 
             function handleHeartClick() {
                 showPanel('details');
-                const destination = dom.destinationName.textContent;
-                fetchIntroduction(destination, dom.detailsContent, dom.loader);
+                // 从innerHTML中提取纯文本用于API请求
+                const destinationText = dom.destinationName.textContent;
+                fetchIntroduction(destinationText, dom.detailsContent, dom.loader);
             }
 
             function showPanel(panelName) {
