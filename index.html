@@ -42,11 +42,10 @@
         .heart-btn:hover { transform: scale(1.2); color: #ef4444; }
         .break-btn { color: #9ca3af; } /* 心碎按钮为灰色 */
         .break-btn:hover { transform: scale(1.2); color: #6b7280; }
-        #animation-canvas { cursor: crosshair; }
         #details-panel {
             align-items: flex-start;
             justify-content: flex-start;
-            background-color: #f9fafb; /* Light gray background */
+            background-color: #f9fafb;
         }
     </style>
 </head>
@@ -94,11 +93,6 @@
         </div>
     </div>
 
-    <!-- 射箭游戏面板 -->
-    <div id="animation-panel" class="panel-overlay hidden">
-         <!-- archery.js 将会在这里创建 Canvas -->
-    </div>
-
     <!-- 结果面板 -->
     <div id="result-panel" class="panel-overlay hidden">
         <div class="card p-8 rounded-2xl max-w-sm mx-4 text-center">
@@ -129,7 +123,6 @@
     
     <!-- 引入模块化JS文件 -->
     <script src="./data.js" defer></script>
-    <script src="./archery.js" defer></script>
     <script src="./introduction.js" defer></script>
 
     <!-- 主逻辑控制器 -->
@@ -152,7 +145,6 @@
                 panels: {
                     intro: document.getElementById('intro-panel'),
                     arrows: document.getElementById('arrow-selection-panel'),
-                    animation: document.getElementById('animation-panel'),
                     result: document.getElementById('result-panel'),
                     details: document.getElementById('details-panel')
                 }
@@ -169,7 +161,9 @@
                 dom.locateBtn.addEventListener('click', handleLocation);
                 dom.panels.arrows.addEventListener('click', handleArrowSelection);
                 dom.heartBtn.addEventListener('click', handleHeartClick);
-                dom.breakBtn.addEventListener('click', () => showPanel('arrows'));
+                // --- 修改核心 ---
+                // 点击心碎按钮，重新执行生成目的地的函数
+                dom.breakBtn.addEventListener('click', generateDestination);
                 dom.backBtn.addEventListener('click', () => showPanel('arrows'));
             }
 
@@ -207,17 +201,14 @@
                 const card = e.target.closest('.arrow-card');
                 if (!card) return;
                 currentShotType = card.dataset.type;
-                showPanel('animation');
-                startArcheryGame(dom.panels.animation, onArcheryHit);
-            }
-
-            function onArcheryHit() {
                 generateDestination();
             }
 
             function generateDestination() {
                 try {
-                    if (typeof provinces === 'undefined') throw new Error('数据文件(data.js)未正确加载。');
+                    if (typeof provinces === 'undefined' || typeof cities === 'undefined' || typeof districtsByCity === 'undefined') {
+                        throw new Error('数据文件(data.js)未正确加载或内部变量名不正确。');
+                    }
                     let destination = '';
                     if (currentShotType === 'province') {
                         destination = provinces[Math.floor(Math.random() * provinces.length)];
