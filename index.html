@@ -48,10 +48,6 @@
             justify-content: flex-start;
             background-color: #f9fafb; /* Light gray background */
         }
-        /* 为不同图片添加颜色滤镜 */
-        .arrow-img-red { filter: invert(35%) sepia(89%) saturate(3353%) hue-rotate(345deg) brightness(96%) contrast(93%); }
-        .arrow-img-blue { filter: invert(48%) sepia(61%) saturate(2145%) hue-rotate(185deg) brightness(98%) contrast(92%); }
-        .arrow-img-green { filter: invert(65%) sepia(33%) saturate(545%) hue-rotate(85deg) brightness(95%) contrast(88%); }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -70,32 +66,29 @@
 
     <!-- 选箭面板 -->
     <div id="arrow-selection-panel" class="panel-overlay hidden">
-        <div class="card p-8 rounded-2xl max-w-lg mx-4">
+        <div class="card p-8 rounded-2xl max-w-md mx-4">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">请选择你的命运之箭</h2>
             <div class="space-y-4">
-                <div data-type="province" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div data-type="province" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
                     <div>
-                        <div class="font-bold text-lg">省级之箭</div>
+                        <div class="font-bold text-lg text-red-600">省级之箭</div>
                         <div class="text-sm text-gray-500">跨越山海，遇见远方</div>
                     </div>
-                    <!-- 使用你的图片 -->
-                    <img src="/jian.png" 
                 </div>
-                <div data-type="city" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div data-type="city" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
                     <div>
-                        <div class="font-bold text-lg">市级之箭</div>
+                        <div class="font-bold text-lg text-blue-600">市级之箭</div>
                         <div class="text-sm text-gray-500">全国漫游，随机一城</div>
                     </div>
-                    <!-- 使用你的图片 -->
-                    <img src="/jian.png" 
                 </div>
-                <div data-type="district" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center justify-between">
+                <div data-type="district" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
                     <div>
-                        <div class="font-bold text-lg">区级之箭</div>
+                        <div class="font-bold text-lg text-green-600">区级之箭</div>
                         <div class="text-sm text-gray-500">街角巷尾，发现惊喜</div>
                     </div>
-                    <!-- 使用你的图片 -->
-                    <img src="/jian.png" >
                 </div>
             </div>
         </div>
