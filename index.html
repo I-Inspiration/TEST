@@ -5,166 +5,161 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>百无聊赖研究院 - 随机旅行</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
         body {
             font-family: 'Inter', 'Noto Sans SC', sans-serif;
-            touch-action: none;
-            background: #e0eafc;
-            background: linear-gradient(to right, #e0eafc, #cfdef3);
             overflow: hidden;
         }
-        #map {
+        .main-container {
+            display: flex;
             height: 100vh;
-            width: 100vw;
-            z-index: 10;
-            transition: filter 0.5s ease-in-out;
         }
-        #map.blurred {
-            filter: blur(8px) brightness(0.7);
+        .control-panel {
+            width: 400px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 10px 0 25px -5px rgba(0,0,0,0.1);
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease-in-out;
         }
-        .screen {
+        .map-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
             z-index: 20;
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
         }
-        .hidden-screen {
+        .panel-content {
             opacity: 0;
-            transform: scale(0.95);
-            pointer-events: none;
+            display: none;
+            transition: opacity 0.3s ease-in-out;
+            animation: fadeIn 0.5s forwards;
         }
-        .card {
-            background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-            border: 1px solid rgba(209, 213, 219, 0.3);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        .panel-content.active {
+            display: block;
+            opacity: 1;
         }
-        .arrow-btn {
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .arrow-btn:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
-            border-color: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
         }
-        .heart-btn, .break-btn {
-            transition: all 0.2s ease-out;
-            text-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .heart-btn:hover { transform: scale(1.2); color: #ef4444; }
-        .break-btn:hover { transform: scale(1.2); color: #3b82f6; }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        #animation-canvas {
-            cursor: crosshair;
-            border-radius: 1rem;
-        }
+        #animation-canvas { cursor: crosshair; }
         #power-bar-container {
-            width: 20px;
-            height: 200px;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            border: 2px solid white;
-            padding: 4px;
+            width: 12px; height: 120px; background-color: rgba(0,0,0,0.2); border-radius: 6px; border: 1px solid white; padding: 2px;
         }
         #power-bar {
-            width: 100%;
-            height: 0%;
-            background: linear-gradient(to top, #fde047, #f97316, #ef4444);
-            border-radius: 6px;
-            transition: height 0.1s linear;
+            width: 100%; height: 0%; background: linear-gradient(to top, #fde047, #f97316, #ef4444); border-radius: 4px; transition: height 0.1s linear;
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .control-panel {
+                width: 100%;
+                height: 50vh; /* Or adjust as needed */
+                position: absolute;
+                bottom: 0;
+                transform: translateY(100%);
+                border-top: 1px solid rgba(0,0,0,0.1);
+            }
+            .control-panel.open {
+                transform: translateY(0);
+            }
+            .map-container {
+                height: 100vh;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 overflow-hidden">
+<body class="bg-gray-100">
 
-    <div id="map"></div>
+    <div class="main-container">
+        <!-- Left Control Panel -->
+        <div id="control-panel" class="control-panel p-6 flex flex-col">
+            <!-- Intro Panel -->
+            <div id="intro-panel" class="panel-content active flex-grow flex flex-col justify-center text-center">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">百无聊赖研究院</h1>
+                <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
+                <button id="locate-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                    🎯 定位我的位置
+                </button>
+                <p id="locate-status" class="text-sm text-gray-500 mt-2 h-4"></p>
+            </div>
 
-    <!-- 初始界面 -->
-    <div id="intro-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="card text-center p-8 rounded-2xl max-w-sm mx-4 animate-fade-in-up">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">百无聊赖研究院</h1>
-            <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
-            <button id="locate-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-                🎯 定位我的位置
-            </button>
-            <p id="locate-status" class="text-sm text-gray-500 mt-2 h-4"></p>
-        </div>
-    </div>
-    
-    <!-- 箭选择界面 -->
-    <div id="arrow-selection-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 hidden-screen">
-        <div class="card text-center p-8 rounded-2xl max-w-lg mx-4">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">请选择你的命运之箭</h2>
-            <p class="text-gray-500 mb-8">不同的箭，将带你探索不同维度的未知</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <button data-type="province" class="arrow-btn p-6 bg-white rounded-xl shadow-md">
-                    <div class="text-4xl mb-2">省级</div>
-                    <p class="text-gray-500">跨越山海，遇见远方</p>
-                </button>
-                <button data-type="city" class="arrow-btn p-6 bg-white rounded-xl shadow-md">
-                    <div class="text-4xl mb-2">市级</div>
-                    <p class="text-gray-500">全国漫游，随机一城</p>
-                </button>
-                <button data-type="district" class="arrow-btn p-6 bg-white rounded-xl shadow-md">
-                    <div class="text-4xl mb-2">区级</div>
-                    <p class="text-gray-500">街角巷尾，发现惊喜</p>
-                </button>
+            <!-- Arrow Selection Panel -->
+            <div id="arrow-selection-panel" class="panel-content flex-grow flex flex-col justify-center">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">请选择你的命运之箭</h2>
+                 <div class="grid grid-cols-1 gap-4">
+                     <button data-type="province" class="arrow-btn p-4 bg-white rounded-lg shadow-md text-left">
+                         <div class="text-xl font-bold">省级</div>
+                         <p class="text-sm text-gray-500">跨越山海，遇见远方</p>
+                     </button>
+                     <button data-type="city" class="arrow-btn p-4 bg-white rounded-lg shadow-md text-left">
+                         <div class="text-xl font-bold">市级</div>
+                         <p class="text-sm text-gray-500">全国漫游，随机一城</p>
+                     </button>
+                     <button data-type="district" class="arrow-btn p-4 bg-white rounded-lg shadow-md text-left">
+                         <div class="text-xl font-bold">区级</div>
+                         <p class="text-sm text-gray-500">街角巷尾，发现惊喜</p>
+                     </button>
+                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- 射箭动画界面 -->
-    <div id="animation-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden-screen p-4">
-        <div class="flex items-center gap-4">
-            <div class="card p-2 sm:p-4 rounded-2xl shadow-2xl">
-                <canvas id="animation-canvas"></canvas>
-            </div>
-            <div class="flex flex-col items-center gap-4">
-                <div id="power-bar-container">
-                    <div id="power-bar"></div>
+
+            <!-- Animation Panel -->
+            <div id="animation-panel" class="panel-content flex-grow flex flex-col items-center justify-center">
+                <div class="flex items-center gap-4 w-full">
+                    <canvas id="animation-canvas" class="bg-white rounded-lg shadow-inner"></canvas>
+                    <div class="flex flex-col items-center gap-2">
+                        <div id="power-bar-container">
+                            <div id="power-bar"></div>
+                        </div>
+                        <p class="text-gray-600 text-xs font-semibold text-center">拖动调整<br>松手发射</p>
+                    </div>
                 </div>
-                <p class="text-white text-md font-semibold text-center">拖动调整角度和力度<br>松手发射！</p>
+            </div>
+
+            <!-- Result Panel -->
+            <div id="result-panel" class="panel-content flex-grow flex flex-col justify-center text-center">
+                <p class="text-gray-600 mb-2">命运的指引是...</p>
+                <h2 id="destination-name" class="text-5xl font-bold text-blue-600 mb-8 break-all"></h2>
+                <div class="flex justify-center space-x-12">
+                    <button id="heart-btn" class="text-5xl text-gray-300 hover:text-red-500 transition-all transform hover:scale-125">❤️</button>
+                    <button id="break-btn" class="text-5xl text-gray-300 hover:text-blue-500 transition-all transform hover:scale-125">💔</button>
+                </div>
+            </div>
+
+            <!-- Details Panel -->
+            <div id="details-panel" class="panel-content flex-grow flex flex-col">
+                <button id="back-btn" class="mb-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg self-start">
+                    &larr; 返回
+                </button>
+                <div id="details-content" class="prose overflow-y-auto flex-grow"></div>
+                <div id="loader" class="hidden items-center mt-4">
+                    <div class="w-6 h-6 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                    <p class="ml-4 text-gray-600">正在探索当地的美食和景点...</p>
+                </div>
             </div>
         </div>
-    </div>
 
-
-    <!-- 结果展示界面 -->
-    <div id="result-screen" class="screen absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 hidden-screen">
-        <div class="card text-center p-8 rounded-2xl max-w-sm mx-4">
-            <p class="text-gray-600 mb-2">命运的指引是...</p>
-            <h2 id="destination-name" class="text-4xl font-bold text-blue-600 mb-6 break-all"></h2>
-            <div class="flex justify-center space-x-12">
-                <button id="heart-btn" class="heart-btn text-5xl text-gray-300">❤️</button>
-                <button id="break-btn" class="break-btn text-5xl text-gray-300">💔</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 详情介绍界面 -->
-    <div id="details-screen" class="screen absolute inset-0 bg-white p-6 md:p-8 overflow-y-auto hidden-screen">
-        <div class="max-w-3xl mx-auto">
-            <button id="back-btn" class="mb-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
-                &larr; 重新选择
-            </button>
-            <div id="details-content" class="prose lg:prose-xl"></div>
-             <div id="loader" class="hidden justify-center items-center mt-8">
-                <div class="loader"></div>
-                <p class="ml-4 text-gray-600">正在为您探索当地的美食和景点...</p>
-            </div>
+        <!-- Right Map Container -->
+        <div class="map-container">
+            <div id="map"></div>
         </div>
     </div>
     
@@ -172,21 +167,25 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM Elements ---
+            const controlPanel = document.getElementById('control-panel');
             const locateBtn = document.getElementById('locate-btn');
             const locateStatus = document.getElementById('locate-status');
-            const introScreen = document.getElementById('intro-screen');
-            const arrowSelectionScreen = document.getElementById('arrow-selection-screen');
-            const animationScreen = document.getElementById('animation-screen');
-            const resultScreen = document.getElementById('result-screen');
-            const detailsScreen = document.getElementById('details-screen');
-            const destinationName = document.getElementById('destination-name');
             const heartBtn = document.getElementById('heart-btn');
             const breakBtn = document.getElementById('break-btn');
             const backBtn = document.getElementById('back-btn');
             const detailsContent = document.getElementById('details-content');
             const loader = document.getElementById('loader');
             const mapElement = document.getElementById('map');
+            const destinationName = document.getElementById('destination-name');
             
+            const panels = {
+                intro: document.getElementById('intro-panel'),
+                arrows: document.getElementById('arrow-selection-panel'),
+                animation: document.getElementById('animation-panel'),
+                result: document.getElementById('result-panel'),
+                details: document.getElementById('details-panel')
+            };
+
             let map;
             let userLocation = { province: "广东", city: "深圳市", lat: 22.54, lng: 114.05 };
             let currentShotType = '';
@@ -209,12 +208,14 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            // --- Screen Logic ---
-            const screens = { intro: introScreen, arrows: arrowSelectionScreen, animation: animationScreen, result: resultScreen, details: detailsScreen };
-            function showScreen(screenName) {
-                Object.values(screens).forEach(s => s.classList.add('hidden-screen'));
-                if (screens[screenName]) screens[screenName].classList.remove('hidden-screen');
-                mapElement.classList.toggle('blurred', screenName !== 'intro');
+            // --- Panel Logic ---
+            function showPanel(panelName) {
+                Object.values(panels).forEach(p => p.classList.remove('active'));
+                if (panels[panelName]) panels[panelName].classList.add('active');
+                // For mobile view
+                if (window.innerWidth <= 768) {
+                    controlPanel.classList.add('open');
+                }
             }
 
             // --- Core Functionality ---
@@ -224,11 +225,6 @@
                 locateBtn.disabled = true;
                 locateStatus.textContent = '正在获取您的经纬度...';
 
-                if (!navigator.geolocation) {
-                    alert('您的浏览器不支持地理定位。');
-                    return;
-                }
-                
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const { latitude, longitude } = position.coords;
                     map.setView([latitude, longitude], 12);
@@ -244,28 +240,24 @@
                         
                         userLocation = { province, city, lat: latitude, lng: longitude };
                         locateStatus.textContent = `当前位置: ${province}, ${city}`;
-                        console.log('Updated user location:', userLocation);
-                        setTimeout(() => showScreen('arrows'), 1000);
-
+                        setTimeout(() => showPanel('arrows'), 1000);
                     } catch (error) {
-                        console.error(error);
                         locateStatus.textContent = '无法解析省市，将使用默认地点。';
-                        setTimeout(() => showScreen('arrows'), 1000);
+                        setTimeout(() => showPanel('arrows'), 1000);
                     }
-
                 }, () => {
                     alert('定位失败！我们将使用一个默认位置开始游戏。');
                     map.setView([userLocation.lat, userLocation.lng], 12);
                     L.marker([userLocation.lat, userLocation.lng]).addTo(map).bindPopup('我们从这里开始！').openPopup();
-                    showScreen('arrows');
+                    showPanel('arrows');
                 });
             });
 
-            arrowSelectionScreen.addEventListener('click', (e) => {
+            panels.arrows.addEventListener('click', (e) => {
                 const button = e.target.closest('.arrow-btn');
                 if (!button) return;
                 currentShotType = button.dataset.type;
-                showScreen('animation');
+                showPanel('animation');
                 startArcheryAnimation();
             });
             
@@ -273,8 +265,7 @@
                 try {
                     if (typeof chinaData === 'undefined') {
                         alert('数据文件(data.js)加载失败，请刷新页面重试。');
-                        showScreen('intro');
-                        return;
+                        showPanel('intro'); return;
                     }
                     let destination = '';
                     if (type === 'province') {
@@ -290,28 +281,25 @@
                             if (!districts || districts.length === 0) throw new Error(`当前城市 (${userLocation.city}) 没有区县数据。`);
                             destination = districts[Math.floor(Math.random() * districts.length)];
                         } else {
-                            console.warn(`无法找到 ${userLocation.province}-${userLocation.city} 的区级数据, 将随机选择一个城市的区级数据。`);
                             const allDistricts = Object.values(chinaData).flatMap(cities => Object.values(cities)).flat();
                             if(allDistricts.length === 0) throw new Error('数据文件中没有任何区级数据。');
                             destination = allDistricts[Math.floor(Math.random() * allDistricts.length)];
                         }
                     }
                     destinationName.textContent = destination;
-                    showScreen('result');
+                    showPanel('result');
                 } catch (error) {
-                    console.error(error);
                     alert("抱歉，生成目的地时出错: " + error.message);
-                    showScreen('arrows');
+                    showPanel('arrows');
                 }
             }
 
-            breakBtn.addEventListener('click', () => showScreen('arrows'));
-            backBtn.addEventListener('click', () => showScreen('arrows'));
+            breakBtn.addEventListener('click', () => showPanel('arrows'));
+            backBtn.addEventListener('click', () => showPanel('arrows'));
 
             heartBtn.addEventListener('click', async () => {
-                showScreen('details');
-                loader.classList.remove('hidden');
-                loader.classList.add('flex');
+                showPanel('details');
+                loader.style.display = 'flex';
                 detailsContent.innerHTML = '';
                 const destination = destinationName.textContent;
                 const prompt = `请为我详细介绍一下中国的旅行目的地：${destination}。请用热情、引人入胜的语气，重点介绍当地最值得体验的3-5个好玩的地方和3-5个特色美食。请用Markdown格式化你的回答，使用标题、列表等让内容更清晰。`;
@@ -331,11 +319,9 @@
                        detailsContent.innerHTML = `<p>抱歉，暂时无法获取关于“${destination}”的详细信息。</p>`;
                     }
                 } catch (error) {
-                    console.error('获取目的地详情失败:', error);
                     detailsContent.innerHTML = `<p>哎呀，探索“${destination}”的旅途中遇到了一点小波折。</p>`;
                 } finally {
-                    loader.classList.add('hidden');
-                    loader.classList.remove('flex');
+                    loader.style.display = 'none';
                 }
             });
 
@@ -357,10 +343,10 @@
 
                 function resizeCanvas() {
                     const container = canvas.parentElement;
-                    const size = Math.min(container.clientWidth, window.innerHeight * 0.8, 500);
+                    const size = Math.min(container.clientWidth, 280);
                     canvas.width = size;
                     canvas.height = size;
-                    maxPull = canvas.width * 0.3;
+                    maxPull = canvas.width * 0.4;
                     resetAnimation();
                 }
 
@@ -368,7 +354,7 @@
                     isPulling = false; isFlying = false;
                     pullVector = { x: 0, y: 0 };
                     bow = { x: canvas.width * 0.9, y: canvas.height / 2, radius: canvas.height * 0.4 };
-                    arrow = { x: bow.x, y: bow.y, length: canvas.width * 0.4, angle: Math.PI, speed: 0 };
+                    arrow = { x: bow.x, y: bow.y, length: canvas.width * 0.5, angle: Math.PI, speed: 0 };
                     target = { x: canvas.width * 0.2, y: canvas.height / 2, radius: canvas.height * 0.15 };
                     powerBar.style.height = '0%';
                     draw();
@@ -403,11 +389,10 @@
                         const ratio = maxPull / pullDistance;
                         pullVector.x *= ratio;
                         pullVector.y *= ratio;
-                        pullDistance = maxPull;
                     }
                     
-                    arrow.angle = Math.atan2(-pullVector.y, -pullVector.x);
-                    const powerRatio = pullDistance / maxPull;
+                    arrow.angle = Math.atan2(pullVector.y, pullVector.x) + Math.PI;
+                    const powerRatio = Math.hypot(pullVector.x, pullVector.y) / maxPull;
                     powerBar.style.height = `${powerRatio * 100}%`;
                     if(synth) synth.setNote(Tone.Frequency("C2").transpose(powerRatio * 24));
                 }
@@ -420,7 +405,7 @@
                     const pullDistance = Math.hypot(pullVector.x, pullVector.y);
                     if (pullDistance > 10) {
                         isFlying = true;
-                        arrow.speed = (pullDistance / maxPull) * 35;
+                        arrow.speed = (pullDistance / maxPull) * 25;
                         if(synth) synth.triggerAttackRelease("G4", "0.2");
                     }
                     pullVector = { x: 0, y: 0 };
@@ -502,24 +487,8 @@
             }
 
             // --- Initial State ---
-            showScreen('intro');
+            showPanel('intro');
         });
     </script>
 </body>
 </html>
-```
-
-### 核心修正详解：
-
-1.  **反向射箭问题**：
-    * **原因**：之前计算射击角度的逻辑是错误的。它错误地将拉弓的方向当成了射击的方向。
-    * **修正**：现在，程序会计算你从弓中心向后拉的向量（比如你向右后方拉），然后**将射击角度设置为这个向量的完全反方向**（射向左前方）。这是通过 `Math.atan2(-pullVector.y, -pullVector.x)` 实现的，确保箭永远朝你拉弓的反方向飞。
-
-2.  **不平滑的拉弓和反向力量条**：
-    * **原因**：这两个问题都源于之前只计算了水平（X轴）的拉动距离，忽略了垂直（Y轴）的移动。
-    * **修正**：现在，拉弓距离是**鼠标到弓中心的真实直线距离** (`Math.hypot`)，这使得拉弓动作和角度变化都变得非常平滑和自然。力量条也因此正确地根据你的拉弓总距离来显示了。
-
-3.  **区级数据读取**：
-    * 这个问题在上个版本已经修复，这个版本**保留了该修复**。程序会通过网络服务将你的经纬度解析成实际的省市，确保“区级”箭能正确读取你所在地的数据。
-
-现在，整个射箭的交互应该完全符合你的预期了：从右向左，角度可调，拉弓顺滑，力量条正常工作。快去试试
