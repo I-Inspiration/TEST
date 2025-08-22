@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百无聊赖研究院 - 随机旅行</title>
+    <title>随机旅行</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -105,7 +105,7 @@
         </div>
     </div>
     
-    <!-- 新增：射箭动画界面 -->
+    <!-- 射箭动画界面 -->
     <div id="animation-screen" class="screen absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 hidden-screen">
         <div class="card p-4 rounded-2xl shadow-2xl">
             <canvas id="animation-canvas" width="800" height="400"></canvas>
@@ -143,7 +143,8 @@
     </div>
     
     <!-- 引用外部数据文件 -->
-    <script src="data.js"></script>
+    <!-- 修改重点：使用 ./ 明确指定当前目录，并添加 defer 属性确保加载顺序 -->
+    <script src="./data.js" defer></script>
 
     <script>
         // --- DOM 元素获取 ---
@@ -233,6 +234,12 @@
         // 3. 生成目的地（动画结束后调用）
         function generateDestination(type) {
              try {
+                // 检查 chinaData 是否已加载
+                if (typeof chinaData === 'undefined') {
+                    alert('数据文件加载失败，请刷新页面重试。');
+                    showScreen('intro'); // 返回初始界面
+                    return;
+                }
                 let destination = '';
                 if (type === 'province') {
                     const provinces = Object.keys(chinaData);
@@ -337,126 +344,78 @@
             const canvas = document.getElementById('animation-canvas');
             const ctx = canvas.getContext('2d');
             
-            // 响应式调整Canvas大小
             function resizeCanvas() {
                 const container = canvas.parentElement;
                 const size = Math.min(container.clientWidth, window.innerHeight * 0.7);
                 canvas.width = size;
                 canvas.height = size / 2;
-                resetAnimation(); // 窗口变化时重置
+                resetAnimation();
             }
 
-            let isPulling = false;
-            let isFlying = false;
-            let startPullPos = { x: 0, y: 0 };
-            let pullDistance = 0;
-            
-            let bow = { x: canvas.width * 0.15, y: canvas.height / 2, radius: 60 };
-            let arrow = { x: bow.x, y: bow.y, length: 100, tipX: 0, tipY: 0, angle: 0, speed: 0 };
-            let target = { x: canvas.width * 0.85, y: canvas.height / 2, radius: 40 };
+            let isPulling = false, isFlying = false, pullDistance = 0;
+            let bow = {}, arrow = {}, target = {};
 
             function resetAnimation() {
                 isPulling = false;
                 isFlying = false;
                 pullDistance = 0;
                 bow = { x: canvas.width * 0.15, y: canvas.height / 2, radius: 60 };
-                arrow = { x: bow.x, y: bow.y, length: 100, tipX: 0, tipY: 0, angle: 0, speed: 0 };
+                arrow = { x: bow.x, y: bow.y, length: 100, angle: 0, speed: 0 };
                 target = { x: canvas.width * 0.85, y: canvas.height / 2, radius: 40 };
                 draw();
             }
 
-            function getMousePos(evt) {
+            function getEventPos(e) {
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = canvas.width / rect.width;
                 const scaleY = canvas.height / rect.height;
-                const clientX = evt.clientX || evt.touches[0].clientX;
-                const clientY = evt.clientY || evt.touches[0].clientY;
-                return {
-                    x: (clientX - rect.left) * scaleX,
-                    y: (clientY - rect.top) * scaleY
-                };
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
             }
 
-            function onMouseDown(e) {
+            let startPullPos = { x: 0, y: 0 };
+            function onInteractionStart(e) {
                 e.preventDefault();
                 if (isFlying) return;
-                startPullPos = getMousePos(e);
-                // 检查是否在弓箭附近点击
+                startPullPos = getEventPos(e);
                 if (Math.abs(startPullPos.x - (bow.x + arrow.length/2)) < 50 && Math.abs(startPullPos.y - bow.y) < 50) {
                     isPulling = true;
                 }
             }
 
-            function onMouseMove(e) {
+            function onInteractionMove(e) {
                 e.preventDefault();
                 if (!isPulling) return;
-                const currentPos = getMousePos(e);
+                const currentPos = getEventPos(e);
                 pullDistance = Math.max(0, Math.min(80, startPullPos.x - currentPos.x));
             }
 
-            function onMouseUp(e) {
+            function onInteractionEnd(e) {
                 e.preventDefault();
                 if (!isPulling) return;
                 isPulling = false;
-                if (pullDistance > 10) { // 只有拉开一定距离才发射
+                if (pullDistance > 10) {
                     isFlying = true;
                     arrow.speed = pullDistance * 0.4;
-                    // 稍微增加一点随机性
-                    const randomAngle = (Math.random() - 0.5) * 0.1; // -0.05 to 0.05 radians
-                    arrow.angle = randomAngle;
+                    arrow.angle = (Math.random() - 0.5) * 0.1;
                 }
                 pullDistance = 0;
             }
 
             function drawBow() {
-                ctx.strokeStyle = '#8B4513';
-                ctx.lineWidth = 8;
-                ctx.beginPath();
-                ctx.arc(bow.x, bow.y, bow.radius, -Math.PI / 2, Math.PI / 2);
-                ctx.stroke();
-
-                // 弓弦
-                ctx.strokeStyle = '#555';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(bow.x, bow.y - bow.radius);
-                ctx.lineTo(bow.x - pullDistance, bow.y);
-                ctx.lineTo(bow.x, bow.y + bow.radius);
-                ctx.stroke();
+                ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.arc(bow.x, bow.y, bow.radius, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+                ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(bow.x, bow.y - bow.radius); ctx.lineTo(bow.x - pullDistance, bow.y); ctx.lineTo(bow.x, bow.y + bow.radius); ctx.stroke();
             }
             
             function drawArrow() {
-                ctx.save();
-                ctx.translate(arrow.x - pullDistance, arrow.y);
-                ctx.rotate(arrow.angle);
-                
-                ctx.fillStyle = '#A0522D';
-                ctx.strokeStyle = '#693815';
-                ctx.lineWidth = 4;
-
-                // 箭身
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(arrow.length, 0);
-                ctx.stroke();
-
-                // 箭头
-                ctx.beginPath();
-                ctx.moveTo(arrow.length, 0);
-                ctx.lineTo(arrow.length - 15, -5);
-                ctx.lineTo(arrow.length - 15, 5);
-                ctx.closePath();
-                ctx.fill();
-                
-                // 箭羽
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.moveTo(0,0);
-                ctx.lineTo(15, -5);
-                ctx.lineTo(15, 5);
-                ctx.closePath();
-                ctx.fill();
-
+                ctx.save(); ctx.translate(arrow.x - pullDistance, arrow.y); ctx.rotate(arrow.angle);
+                ctx.fillStyle = '#A0522D'; ctx.strokeStyle = '#693815'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(arrow.length, 0); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(arrow.length, 0); ctx.lineTo(arrow.length - 15, -5); ctx.lineTo(arrow.length - 15, 5); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(15, -5); ctx.lineTo(15, 5); ctx.closePath(); ctx.fill();
                 ctx.restore();
             }
 
@@ -464,9 +423,7 @@
                 const colors = ['#FF4136', '#FFFFFF', '#FF4136', '#FFFFFF', '#FF4136'];
                 for (let i = 0; i < 5; i++) {
                     ctx.fillStyle = colors[i];
-                    ctx.beginPath();
-                    ctx.arc(target.x, target.y, target.radius * (1 - i * 0.2), 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(target.x, target.y, target.radius * (1 - i * 0.2), 0, Math.PI * 2); ctx.fill();
                 }
             }
             
@@ -474,51 +431,44 @@
                 if (isFlying) {
                     arrow.x += arrow.speed * Math.cos(arrow.angle);
                     arrow.y += arrow.speed * Math.sin(arrow.angle);
-
-                    // 检查是否击中目标
                     if (arrow.x + arrow.length >= target.x - target.radius) {
                         isFlying = false;
-                        arrow.x = target.x - arrow.length; // 确保箭停在靶上
-                        
-                        // 命中后延迟切换界面
-                        setTimeout(() => {
-                            generateDestination(currentShotType);
-                        }, 800);
+                        arrow.x = target.x - arrow.length;
+                        setTimeout(() => generateDestination(currentShotType), 800);
                     }
                 }
             }
 
             function draw() {
-                ctx.fillStyle = '#87CEEB'; // 天空蓝背景
+                ctx.fillStyle = '#87CEEB';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                drawTarget();
-                drawBow();
-                drawArrow();
+                drawTarget(); drawBow(); drawArrow();
             }
 
+            let animationFrameId;
             function gameLoop() {
                 update();
                 draw();
-                requestAnimationFrame(gameLoop);
+                animationFrameId = requestAnimationFrame(gameLoop);
             }
             
-            // 清理旧的事件监听器，防止重复绑定
-            canvas.removeEventListener('mousedown', onMouseDown);
-            canvas.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
-            canvas.removeEventListener('touchstart', onMouseDown);
-            canvas.removeEventListener('touchmove', onMouseMove);
-            window.removeEventListener('touchend', onMouseUp);
+            // 清理旧的事件监听器
+            canvas.removeEventListener('mousedown', onInteractionStart);
+            canvas.removeEventListener('mousemove', onInteractionMove);
+            window.removeEventListener('mouseup', onInteractionEnd);
+            canvas.removeEventListener('touchstart', onInteractionStart);
+            canvas.removeEventListener('touchmove', onInteractionMove);
+            window.removeEventListener('touchend', onInteractionEnd);
             window.removeEventListener('resize', resizeCanvas);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
             
             // 绑定新的事件监听器
-            canvas.addEventListener('mousedown', onMouseDown);
-            canvas.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mouseup', onMouseUp);
-            canvas.addEventListener('touchstart', onMouseDown);
-            canvas.addEventListener('touchmove', onMouseMove);
-            window.addEventListener('touchend', onMouseUp);
+            canvas.addEventListener('mousedown', onInteractionStart);
+            canvas.addEventListener('mousemove', onInteractionMove);
+            window.addEventListener('mouseup', onInteractionEnd);
+            canvas.addEventListener('touchstart', onInteractionStart);
+            canvas.addEventListener('touchmove', onInteractionMove);
+            window.addEventListener('touchend', onInteractionEnd);
             window.addEventListener('resize', resizeCanvas);
             
             resizeCanvas();
