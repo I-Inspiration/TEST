@@ -171,7 +171,7 @@
     <script src="./data.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM 元素获取 ---
+            // --- DOM Elements ---
             const locateBtn = document.getElementById('locate-btn');
             const locateStatus = document.getElementById('locate-status');
             const introScreen = document.getElementById('intro-screen');
@@ -186,33 +186,30 @@
             const detailsContent = document.getElementById('details-content');
             const loader = document.getElementById('loader');
             const mapElement = document.getElementById('map');
-            const powerBar = document.getElementById('power-bar');
-
+            
             let map;
             let userLocation = { province: "广东", city: "深圳市", lat: 22.54, lng: 114.05 };
             let currentShotType = '';
-            let synth; // 音效合成器
+            let synth;
 
-            // --- 音效初始化 ---
+            // --- Audio Init ---
             function initAudio() {
                 if (Tone.context.state !== 'running') {
                     Tone.start();
                 }
                 synth = new Tone.PolySynth(Tone.Synth, {
                     oscillator: { type: "fatsawtooth", count: 3, spread: 30 },
-                    envelope: {
-                        attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.4, attackCurve: 'exponential'
-                    }
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.5, release: 0.4, attackCurve: 'exponential' }
                 }).toDestination();
             }
             
-            // --- 地图初始化 ---
+            // --- Map Init ---
             map = L.map('map').setView([35.8617, 104.1954], 4);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            // --- 屏幕切换逻辑 ---
+            // --- Screen Logic ---
             const screens = { intro: introScreen, arrows: arrowSelectionScreen, animation: animationScreen, result: resultScreen, details: detailsScreen };
             function showScreen(screenName) {
                 Object.values(screens).forEach(s => s.classList.add('hidden-screen'));
@@ -220,9 +217,9 @@
                 mapElement.classList.toggle('blurred', screenName !== 'intro');
             }
 
-            // --- 核心功能 ---
+            // --- Core Functionality ---
             locateBtn.addEventListener('click', () => {
-                initAudio(); // 用户首次交互时初始化音频
+                initAudio();
                 locateBtn.textContent = '正在定位...';
                 locateBtn.disabled = true;
                 locateStatus.textContent = '正在获取您的经纬度...';
@@ -236,20 +233,16 @@
                     const { latitude, longitude } = position.coords;
                     map.setView([latitude, longitude], 12);
                     L.marker([latitude, longitude]).addTo(map).bindPopup('你在这里！').openPopup();
-                    
                     locateStatus.textContent = '定位成功！正在解析省市信息...';
                     
                     try {
-                        // 使用反向地理编码API将经纬度转换为省市
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=zh`);
                         if (!response.ok) throw new Error('地理信息解析失败');
                         const data = await response.json();
+                        const province = data.address.state ? data.address.state.replace(/省|市|自治区|特别行政区/g, '') : userLocation.province;
+                        const city = (data.address.city || data.address.county || userLocation.city).replace('市', '');
                         
-                        // 提取并清理省市名称
-                        const province = data.address.state ? data.address.state.replace('省', '').replace('市', '').replace('自治区', '').replace('特别行政区','') : userLocation.province;
-                        const city = data.address.city || data.address.county || userLocation.city;
-                        
-                        userLocation = { province, city: city.replace('市', ''), lat: latitude, lng: longitude };
+                        userLocation = { province, city, lat: latitude, lng: longitude };
                         locateStatus.textContent = `当前位置: ${province}, ${city}`;
                         console.log('Updated user location:', userLocation);
                         setTimeout(() => showScreen('arrows'), 1000);
@@ -279,7 +272,7 @@
             function generateDestination(type) {
                 try {
                     if (typeof chinaData === 'undefined') {
-                        alert('数据文件加载失败，请刷新页面重试。');
+                        alert('数据文件(data.js)加载失败，请刷新页面重试。');
                         showScreen('intro');
                         return;
                     }
@@ -291,15 +284,15 @@
                         const allCities = Object.values(chinaData).flatMap(cities => Object.keys(cities));
                         destination = allCities[Math.floor(Math.random() * allCities.length)];
                     } else if (type === 'district') {
-                        // 修正后的逻辑：使用更新后的 userLocation
                         const provinceData = chinaData[userLocation.province];
                         if (provinceData && provinceData[userLocation.city]) {
                             const districts = provinceData[userLocation.city];
                             if (!districts || districts.length === 0) throw new Error(`当前城市 (${userLocation.city}) 没有区县数据。`);
                             destination = districts[Math.floor(Math.random() * districts.length)];
                         } else {
-                            console.warn(`无法找到 ${userLocation.province}-${userLocation.city} 的区级数据, 将随机选择一个城市进行区级探索。`);
+                            console.warn(`无法找到 ${userLocation.province}-${userLocation.city} 的区级数据, 将随机选择一个城市的区级数据。`);
                             const allDistricts = Object.values(chinaData).flatMap(cities => Object.values(cities)).flat();
+                            if(allDistricts.length === 0) throw new Error('数据文件中没有任何区级数据。');
                             destination = allDistricts[Math.floor(Math.random() * allDistricts.length)];
                         }
                     }
@@ -324,22 +317,16 @@
                 const prompt = `请为我详细介绍一下中国的旅行目的地：${destination}。请用热情、引人入胜的语气，重点介绍当地最值得体验的3-5个好玩的地方和3-5个特色美食。请用Markdown格式化你的回答，使用标题、列表等让内容更清晰。`;
                 
                 try {
-                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                    const payload = { contents: chatHistory };
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
                     const apiKey = "";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                     
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
                     const result = await response.json();
                     
                     if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        detailsContent.innerHTML = simpleMarkdownToHtml(text);
+                        detailsContent.innerHTML = simpleMarkdownToHtml(result.candidates[0].content.parts[0].text);
                     } else {
                        detailsContent.innerHTML = `<p>抱歉，暂时无法获取关于“${destination}”的详细信息。</p>`;
                     }
@@ -353,39 +340,36 @@
             });
 
             function simpleMarkdownToHtml(md) {
-                return md
-                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                    .replace(/^\* (.*$)/gim, '<li>$1</li>')
-                    .replace(/^- (.*$)/gim, '<li>$1</li>')
-                    .replace(/<\/li>\n<li>/gim, '</li><li>')
-                    .replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
-                    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br>');
+                return md.replace(/^### (.*$)/gim, '<h3>$1</h3>').replace(/^## (.*$)/gim, '<h2>$1</h2>').replace(/^# (.*$)/gim, '<h1>$1</h1>').replace(/^\* (.*$)/gim, '<li>$1</li>').replace(/^- (.*$)/gim, '<li>$1</li>').replace(/<\/li>\n<li>/gim, '</li><li>').replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>').replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>').replace(/\n/g, '<br>');
             }
             
-            // --- 射箭动画逻辑 ---
+            // --- Archery Animation Logic ---
             function startArcheryAnimation() {
                 const canvas = document.getElementById('animation-canvas');
                 const ctx = canvas.getContext('2d');
+                const powerBar = document.getElementById('power-bar');
                 
+                let isPulling = false, isFlying = false;
+                let bow = {}, arrow = {}, target = {};
+                let pullVector = { x: 0, y: 0 };
+                let maxPull;
+                let animationFrameId;
+
                 function resizeCanvas() {
                     const container = canvas.parentElement;
-                    const size = Math.min(container.clientWidth, window.innerHeight * 0.8, 600);
+                    const size = Math.min(container.clientWidth, window.innerHeight * 0.8, 500);
                     canvas.width = size;
-                    canvas.height = size / 2;
+                    canvas.height = size;
+                    maxPull = canvas.width * 0.3;
                     resetAnimation();
                 }
 
-                let isPulling = false, isFlying = false, pullDistance = 0;
-                let bow = {}, arrow = {}, target = {};
-
                 function resetAnimation() {
-                    isPulling = false; isFlying = false; pullDistance = 0;
-                    bow = { x: canvas.width * 0.85, y: canvas.height / 2, radius: canvas.height * 0.4 };
-                    arrow = { x: bow.x, y: bow.y, length: canvas.width * 0.3, angle: 0, speed: 0 };
-                    target = { x: canvas.width * 0.15, y: canvas.height / 2, radius: canvas.height * 0.3 };
+                    isPulling = false; isFlying = false;
+                    pullVector = { x: 0, y: 0 };
+                    bow = { x: canvas.width * 0.9, y: canvas.height / 2, radius: canvas.height * 0.4 };
+                    arrow = { x: bow.x, y: bow.y, length: canvas.width * 0.4, angle: Math.PI, speed: 0 };
+                    target = { x: canvas.width * 0.2, y: canvas.height / 2, radius: canvas.height * 0.15 };
                     powerBar.style.height = '0%';
                     draw();
                 }
@@ -397,12 +381,11 @@
                     return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
                 }
 
-                let startPullPos = { x: 0, y: 0 };
                 function onInteractionStart(e) {
                     e.preventDefault();
                     if (isFlying) return;
-                    startPullPos = getEventPos(e);
-                    if (Math.hypot(startPullPos.x - arrow.x, startPullPos.y - arrow.y) < 50) {
+                    const pos = getEventPos(e);
+                    if (Math.hypot(pos.x - bow.x, pos.y - bow.y) < bow.radius * 1.2) {
                         isPulling = true;
                         if(synth) synth.triggerAttack("C2");
                     }
@@ -411,17 +394,20 @@
                 function onInteractionMove(e) {
                     e.preventDefault();
                     if (!isPulling) return;
-                    const currentPos = getEventPos(e);
-                    const dx = arrow.x - currentPos.x;
-                    const dy = arrow.y - currentPos.y;
+                    const pos = getEventPos(e);
+                    pullVector.x = pos.x - bow.x;
+                    pullVector.y = pos.y - bow.y;
                     
-                    pullDistance = Math.max(0, Math.min(canvas.width * 0.25, dx));
-                    arrow.angle = Math.atan2(dy, dx) - Math.PI;
+                    let pullDistance = Math.hypot(pullVector.x, pullVector.y);
+                    if (pullDistance > maxPull) {
+                        const ratio = maxPull / pullDistance;
+                        pullVector.x *= ratio;
+                        pullVector.y *= ratio;
+                        pullDistance = maxPull;
+                    }
                     
-                    // 限制角度
-                    arrow.angle = Math.max(-Math.PI / 8, Math.min(Math.PI / 8, arrow.angle));
-
-                    const powerRatio = pullDistance / (canvas.width * 0.25);
+                    arrow.angle = Math.atan2(-pullVector.y, -pullVector.x);
+                    const powerRatio = pullDistance / maxPull;
                     powerBar.style.height = `${powerRatio * 100}%`;
                     if(synth) synth.setNote(Tone.Frequency("C2").transpose(powerRatio * 24));
                 }
@@ -431,37 +417,34 @@
                     if (!isPulling) return;
                     isPulling = false;
                     if(synth) synth.triggerRelease();
-
+                    const pullDistance = Math.hypot(pullVector.x, pullVector.y);
                     if (pullDistance > 10) {
                         isFlying = true;
-                        arrow.speed = pullDistance * 0.3;
+                        arrow.speed = (pullDistance / maxPull) * 35;
                         if(synth) synth.triggerAttackRelease("G4", "0.2");
                     }
-                    powerBar.style.height = '0%';
+                    pullVector = { x: 0, y: 0 };
                 }
 
                 function drawBow() {
                     ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 8;
                     ctx.beginPath(); ctx.arc(bow.x, bow.y, bow.radius, Math.PI / 2, -Math.PI / 2); ctx.stroke();
-                    
-                    const stringPullX = bow.x + pullDistance * Math.cos(arrow.angle + Math.PI);
-                    const stringPullY = bow.y + pullDistance * Math.sin(arrow.angle + Math.PI);
-
+                    const stringNockX = bow.x + pullVector.x;
+                    const stringNockY = bow.y + pullVector.y;
                     ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(bow.x, bow.y - bow.radius); ctx.lineTo(stringPullX, stringPullY); ctx.lineTo(bow.x, bow.y + bow.radius); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(bow.x, bow.y - bow.radius); ctx.lineTo(stringNockX, stringNockY); ctx.lineTo(bow.x, bow.y + bow.radius); ctx.stroke();
                 }
                 
                 function drawArrow() {
                     ctx.save();
-                    const pullX = bow.x + pullDistance * Math.cos(arrow.angle + Math.PI);
-                    const pullY = bow.y + pullDistance * Math.sin(arrow.angle + Math.PI);
-                    ctx.translate(isFlying ? arrow.x : pullX, isFlying ? arrow.y : pullY);
+                    const nockX = isFlying ? arrow.x : bow.x + pullVector.x;
+                    const nockY = isFlying ? arrow.y : bow.y + pullVector.y;
+                    ctx.translate(nockX, nockY);
                     ctx.rotate(arrow.angle);
-                    
                     ctx.fillStyle = '#A0522D'; ctx.strokeStyle = '#693815'; ctx.lineWidth = 4;
-                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-arrow.length, 0); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -5); ctx.lineTo(15, 5); ctx.closePath(); ctx.fill();
-                    ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.moveTo(-arrow.length,0); ctx.lineTo(-arrow.length + 15, -5); ctx.lineTo(-arrow.length + 15, 5); ctx.closePath(); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(arrow.length, 0); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(arrow.length, 0); ctx.lineTo(arrow.length - 15, -5); ctx.lineTo(arrow.length - 15, 5); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -5); ctx.lineTo(15, 5); ctx.closePath(); ctx.fill();
                     ctx.restore();
                 }
 
@@ -477,21 +460,20 @@
                     if (isFlying) {
                         arrow.x += arrow.speed * Math.cos(arrow.angle);
                         arrow.y += arrow.speed * Math.sin(arrow.angle);
-                        if (arrow.x - arrow.length <= target.x + target.radius) {
+                        const tipX = arrow.x + arrow.length * Math.cos(arrow.angle);
+                        const tipY = arrow.y + arrow.length * Math.sin(arrow.angle);
+                        if (Math.hypot(tipX - target.x, tipY - target.y) < target.radius) {
                             isFlying = false;
-                            arrow.x = target.x + arrow.length;
                             if(synth) synth.triggerAttackRelease("C5", "0.5");
                             setTimeout(() => generateDestination(currentShotType), 800);
+                        }
+                        if (tipX < 0 || tipX > canvas.width || tipY < 0 || tipY > canvas.height) {
+                             isFlying = false;
+                             setTimeout(() => resetAnimation(), 500);
                         }
                     }
                 }
 
-                function draw() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    drawTarget(); drawBow(); drawArrow();
-                }
-
-                let animationFrameId;
                 function gameLoop() {
                     update();
                     draw();
@@ -519,9 +501,25 @@
                 gameLoop();
             }
 
-            // --- 初始状态 ---
+            // --- Initial State ---
             showScreen('intro');
         });
     </script>
 </body>
 </html>
+```
+
+### 核心修正详解：
+
+1.  **反向射箭问题**：
+    * **原因**：之前计算射击角度的逻辑是错误的。它错误地将拉弓的方向当成了射击的方向。
+    * **修正**：现在，程序会计算你从弓中心向后拉的向量（比如你向右后方拉），然后**将射击角度设置为这个向量的完全反方向**（射向左前方）。这是通过 `Math.atan2(-pullVector.y, -pullVector.x)` 实现的，确保箭永远朝你拉弓的反方向飞。
+
+2.  **不平滑的拉弓和反向力量条**：
+    * **原因**：这两个问题都源于之前只计算了水平（X轴）的拉动距离，忽略了垂直（Y轴）的移动。
+    * **修正**：现在，拉弓距离是**鼠标到弓中心的真实直线距离** (`Math.hypot`)，这使得拉弓动作和角度变化都变得非常平滑和自然。力量条也因此正确地根据你的拉弓总距离来显示了。
+
+3.  **区级数据读取**：
+    * 这个问题在上个版本已经修复，这个版本**保留了该修复**。程序会通过网络服务将你的经纬度解析成实际的省市，确保“区级”箭能正确读取你所在地的数据。
+
+现在，整个射箭的交互应该完全符合你的预期了：从右向左，角度可调，拉弓顺滑，力量条正常工作。快去试试
