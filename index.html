@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>随机旅行射箭</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header>
+        <h1>🎯随机旅行</h1>
+        <p>下一站去哪？让命运决定你的旅行！</p>
+    </header>
+
+    <main>
+        <div id="map-container">
+            <img id="china-map" src="https://img1.imgtp.com/2023/06/12/CNmap.png" alt="中国地图" />
+            <div id="arrow"></div>
+        </div>
+
+
+    <!-- 选箭面板 -->
+    <div id="arrow-selection-panel" class="panel-overlay hidden">
+        <div class="card p-8 rounded-2xl max-w-md mx-4">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">请选择你的命运之箭</h2>
+            <div class="space-y-4">
+                <div data-type="province" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
+                    <div>
+                        <div class="font-bold text-lg text-red-600">省级之箭</div>
+                        <div class="text-sm text-gray-500">跨越山海，遇见远方</div>
+                    </div>
+                </div>
+                <div data-type="city" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
+                    <div>
+                        <div class="font-bold text-lg text-blue-600">市级之箭</div>
+                        <div class="text-sm text-gray-500">全国漫游，随机一城</div>
+                    </div>
+                </div>
+                <div data-type="district" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
+                    <div class="text-2xl mr-4">🎯</div>
+                    <div>
+                        <div class="font-bold text-lg text-green-600">区级之箭</div>
+                        <div class="text-sm text-gray-500">街角巷尾，发现惊喜</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div id="result-container" class="hidden">
+            <h2 id="result-title"></h2>
+            <div class="heart-icons">
+                <span id="heart-yes" title="查看旅行攻略">❤️</span>
+                <span id="heart-no" title="重新随机">💔</span>
+            </div>
+            <div id="travel-guide" class="hidden"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2025 随机旅行</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
