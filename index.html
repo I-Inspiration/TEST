@@ -1,80 +1,56 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>随机旅行</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>随机旅行</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-    <!-- 大地图 -->
-    <div id="map"></div>
 
-    <!-- 初始界面 -->
-    <div id="intro-screen" class="screen absolute inset-0 flex items-center justify-center">
-        <div class="card text-center p-8 rounded-2xl max-w-sm mx-4 animate-fade-in-up">
-            <h1 class="text-3xl font-bold mb-2">随机旅行</h1>
-            <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
-            <button id="locate-btn" class="primary-btn w-full py-3 rounded-lg">🎯 定位我的位置</button>
-            <p id="locate-status" class="text-sm mt-2 h-4"></p>
-        </div>
+<div id="map"></div>
+
+<!-- 初始界面 -->
+<div id="intro-screen" class="screen">
+  <div class="card">
+    <h1>随机旅行</h1>
+    <p>下一站去哪？让命运决定你的旅行！</p>
+    <button id="locate-btn">🎯 定位我的位置</button>
+    <p id="locate-status"></p>
+  </div>
+</div>
+
+<!-- 箭选择界面 -->
+<div id="arrow-selection-screen" class="screen hidden-screen">
+  <div class="card">
+    <h2>请选择你的命运之箭</h2>
+    <div class="arrow-buttons">
+      <button class="arrow-btn" data-type="province">🎯省</button>
+      <button class="arrow-btn" data-type="city">🎯市</button>
+      <button class="arrow-btn" data-type="district">🎯区</button>
     </div>
+  </div>
+</div>
 
-    <!-- 箭选择界面 -->
-    <div id="arrow-selection-screen" class="screen absolute inset-0 flex items-center justify-center hidden-screen">
-        <div class="card text-center p-8 rounded-2xl max-w-lg mx-4">
-            <h2 class="text-2xl font-bold mb-4">请选择你的命运之箭</h2>
-            <p class="text-gray-500 mb-8">不同的箭，将带你探索不同维度的未知</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <button data-type="province" class="arrow-btn p-6 rounded-xl">🎯省级</button>
-                <button data-type="city" class="arrow-btn p-6 rounded-xl">🎯市级</button>
-                <button data-type="district" class="arrow-btn p-6 rounded-xl">🎯区级</button>
-            </div>
-        </div>
-    </div>
+<!-- 射箭动画界面 -->
+<div id="animation-screen" class="screen hidden-screen">
+  <div class="animation-card">
+    <canvas id="animation-canvas"></canvas>
+    <button id="shoot-btn">拉弓射箭</button>
+  </div>
+</div>
 
-    <!-- 射箭动画界面 -->
-    <div id="animation-screen" class="screen absolute inset-0 flex items-center justify-center hidden-screen p-4">
-        <div class="flex items-center gap-4">
-            <div class="card p-2 sm:p-4 rounded-2xl shadow-2xl">
-                <canvas id="animation-canvas"></canvas>
-            </div>
-            <div class="flex flex-col items-center gap-4">
-                <div id="power-bar-container">
-                    <div id="power-bar"></div>
-                </div>
-                <p class="text-white text-md font-semibold text-center">拖动调整角度和力度<br>松手发射！</p>
-            </div>
-        </div>
-    </div>
+<!-- 结果展示界面 -->
+<div id="result-screen" class="screen hidden-screen">
+  <div class="card">
+    <p>命运的指引是...</p>
+    <h2 id="destination-name"></h2>
+    <button id="restart-btn">↩ 重新选择</button>
+  </div>
+</div>
 
-    <!-- 结果展示界面 -->
-    <div id="result-screen" class="screen absolute inset-0 flex items-center justify-center hidden-screen">
-        <div class="card text-center p-8 rounded-2xl max-w-sm mx-4">
-            <p class="text-gray-600 mb-2">命运的指引是...</p>
-            <h2 id="destination-name" class="text-4xl font-bold mb-6 break-all"></h2>
-            <div class="flex justify-center space-x-12">
-                <button id="heart-btn" class="heart-btn text-5xl">❤️</button>
-                <button id="break-btn" class="break-btn text-5xl">💔</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 详情介绍界面 -->
-    <div id="details-screen" class="screen absolute inset-0 bg-white p-6 md:p-8 overflow-y-auto hidden-screen">
-        <div class="max-w-3xl mx-auto">
-            <button id="back-btn" class="back-btn mb-6">&larr; 重新选择</button>
-            <div id="details-content" class="prose lg:prose-xl"></div>
-            <div id="loader" class="hidden justify-center items-center mt-8">
-                <div class="loader"></div>
-                <p class="ml-4 text-gray-600">正在为您探索当地的美食和景点...</p>
-            </div>
-        </div>
-    </div>
-
-    <script src="app.js" defer></script>
+<script src="app.js"></script>
 </body>
 </html>
