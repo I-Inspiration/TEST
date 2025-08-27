@@ -4,79 +4,132 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>随机旅行</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans antialiased text-gray-800 flex items-center justify-center min-h-screen">
 
-    <div id="map"></div>
+    <div class="main-container max-w-lg w-full">
 
-    <div id="intro-panel" class="panel-overlay">
-        <div class="card text-center p-8 rounded-2xl max-w-sm mx-4">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">随机旅行</h1>
-            <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
-            <div id="location-form" class="space-y-4">
-                <select id="province-select" class="w-full p-2 border rounded-lg bg-gray-50"></select>
-                <select id="city-select" class="w-full p-2 border rounded-lg bg-gray-50"></select>
-                <select id="district-select" class="w-full p-2 border rounded-lg bg-gray-50"></select>
+        <div id="step-location" class="card-step">
+            <h1 class="text-4xl font-extrabold text-center mb-4 text-gray-800">随机旅行 🌍</h1>
+            <p class="text-center text-gray-500 mb-8">告诉我你的出发点，开启一场未知的旅程！</p>
+            
+            <div class="space-y-4 mb-6">
+                <select id="province-select" class="select-input"></select>
+                <select id="city-select" class="select-input"></select>
+                <select id="district-select" class="select-input"></select>
             </div>
-            <button id="confirm-location-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 mt-6">出发！</button>
+            
+            <button id="confirm-location-btn" class="button-primary">
+                <i class="fas fa-check mr-2"></i> 确认出发地
+            </button>
         </div>
-    </div>
 
-    <div id="arrow-selection-panel" class="panel-overlay hidden">
-        <div class="card p-8 rounded-2xl max-w-md mx-4">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">请选择你的命运之箭</h2>
+        <div id="step-mode-selection" class="card-step hidden">
+            <h2 class="text-3xl font-extrabold text-center mb-4 text-gray-800">选择冒险模式 ✨</h2>
+            <p class="text-center text-gray-500 mb-8">是向往远方，还是探索周边？</p>
+
             <div class="space-y-4">
-                <div data-type="province" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
-                    <div class="text-2xl mr-4">🎯</div>
+                <button id="mode-full-random" class="button-mode group">
+                    <i class="fas fa-globe-americas text-2xl mr-4 text-purple-500 group-hover:animate-pulse"></i>
                     <div>
-                        <div class="font-bold text-lg text-red-600">省级之箭</div>
-                        <div class="text-sm text-gray-500">跨越山海，遇见远方</div>
+                        <div class="font-bold text-lg">探索远方 (完全随机)</div>
+                        <div class="text-sm opacity-90">让命运带你去全国任何一个地方</div>
+                    </div>
+                </button>
+                <button id="mode-nearby-random" class="button-mode group">
+                    <i class="fas fa-compass text-2xl mr-4 text-green-500 group-hover:animate-spin"></i>
+                    <div>
+                        <div class="font-bold text-lg">探索周边</div>
+                        <div class="text-sm opacity-90">在您所在的省市内发现惊喜</div>
+                    </div>
+                </button>
+            </div>
+            <button class="button-secondary back-btn" data-target="step-location">
+                <i class="fas fa-arrow-left mr-2"></i> 返回修改地点
+            </button>
+        </div>
+
+        <div id="step-full-random-arrows" class="card-step hidden">
+            <h2 class="text-3xl font-extrabold text-center mb-4 text-gray-800">选择“命运之箭” 🎯</h2>
+            <div class="space-y-4">
+                <div data-type="province" class="arrow-card">
+                    <div class="text-3xl mr-4">🚀</div>
+                    <div>
+                        <div class="font-bold text-xl">省级之箭</div>
+                        <div class="text-sm">随机全国任意省份</div>
                     </div>
                 </div>
-                <div data-type="city" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
-                    <div class="text-2xl mr-4">🎯</div>
+                <div data-type="city" class="arrow-card">
+                    <div class="text-3xl mr-4">🏙️</div>
                     <div>
-                        <div class="font-bold text-lg text-blue-600">市级之箭</div>
-                        <div class="text-sm text-gray-500">全国漫游，随机一城</div>
+                        <div class="font-bold text-xl">市级之箭</div>
+                        <div class="text-sm">随机全国任意城市</div>
                     </div>
                 </div>
-                <div data-type="district" class="arrow-card cursor-pointer bg-white p-4 rounded-lg shadow-md flex items-center">
-                    <div class="text-2xl mr-4">🎯</div>
+                <div data-type="district" class="arrow-card">
+                    <div class="text-3xl mr-4">🏡</div>
                     <div>
-                        <div class="font-bold text-lg text-green-600">区级之箭</div>
-                        <div class="text-sm text-gray-500">街角巷尾，发现惊喜</div>
+                        <div class="font-bold text-xl">区级之箭</div>
+                        <div class="text-sm">随机全国任意区县</div>
                     </div>
                 </div>
             </div>
+            <button class="button-secondary back-btn" data-target="step-mode-selection">
+                <i class="fas fa-arrow-left mr-2"></i> 返回选择模式
+            </button>
         </div>
-    </div>
 
-    <div id="animation-panel" class="panel-overlay hidden">
-        <div class="card p-4 rounded-2xl">
-            <canvas id="animation-canvas" width="300" height="150"></canvas>
-        </div>
-    </div>
-    
-    <div id="result-panel" class="panel-overlay hidden">
-        <div class="card p-8 rounded-2xl max-w-sm mx-4 text-center">
-            <p class="text-gray-600 mb-2">命运的指引是...</p>
-            <h2 id="destination-name" class="text-5xl font-bold text-blue-600 mb-8 leading-tight"></h2>
-            <div class="flex justify-center space-x-12">
-                <button id="heart-btn" class="heart-btn text-5xl text-gray-300 transition-transform">❤️</button>
-                <button id="break-btn" class="break-btn text-5xl transition-transform">💔</button>
+        <div id="step-nearby-options" class="card-step hidden">
+            <h2 class="text-3xl font-extrabold text-center mb-4 text-gray-800">选择探索范围 🧭</h2>
+            <div class="space-y-4">
+                 <div data-type="nearby-city" class="arrow-card">
+                    <div class="text-3xl mr-4">🗺️</div>
+                    <div>
+                        <div class="font-bold text-xl">同省漫游</div>
+                        <div class="text-sm">随机省内其它城市</div>
+                    </div>
+                </div>
+                <div data-type="nearby-district" class="arrow-card">
+                    <div class="text-3xl mr-4">🏘️</div>
+                    <div>
+                        <div class="font-bold text-xl">同城探索</div>
+                        <div class="text-sm">随机市内其它区县</div>
+                    </div>
+                </div>
             </div>
+             <button class="button-secondary back-btn" data-target="step-mode-selection">
+                <i class="fas fa-arrow-left mr-2"></i> 返回选择模式
+            </button>
         </div>
-    </div>
 
-    <div id="details-panel" class="panel-overlay hidden">
-        <div class="w-full max-w-4xl h-full bg-white shadow-2xl flex flex-col">
-             <div class="p-6 border-b">
-                <button id="back-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">&larr; 返回</button>
+        <div id="animation-panel" class="card-step hidden text-center">
+            <h2 class="text-3xl font-extrabold mb-4 text-gray-800">命运正在抉择...</h2>
+            <canvas id="animation-canvas" class="w-full h-auto mx-auto" width="300" height="150"></canvas>
+            <p class="text-gray-500 mt-4">奇遇即将揭晓！</p>
+        </div>
+
+        <div id="result-panel" class="card-step hidden text-center">
+            <p class="text-lg text-gray-500 mb-2">命运的指引是...</p>
+            <h2 id="destination-name" class="text-6xl font-extrabold text-blue-600 my-6 leading-tight"></h2>
+            <div class="flex justify-center space-x-8 mb-8">
+                <button id="heart-btn" class="result-icon-btn group"><i class="fa-solid fa-heart text-gray-300 group-hover:text-red-500"></i></button>
+                <button id="break-btn" class="result-icon-btn group"><i class="fa-solid fa-shuffle text-gray-300 group-hover:text-blue-500"></i></button>
+            </div>
+            <button id="start-new-journey-btn" class="button-primary">
+                <i class="fas fa-redo mr-2"></i> 开启一段新旅程
+            </button>
+        </div>
+
+        <div id="details-panel" class="details-panel">
+             <div class="p-4 border-b flex items-center justify-between">
+                <button id="back-btn" class="button-secondary !py-2 !px-4"><i class="fas fa-arrow-left mr-2"></i> 返回</button>
+                <h3 class="text-xl font-bold">目的地详情</h3>
+                <div class="w-16"></div>
              </div>
-             <div id="details-container" class="prose p-6 overflow-y-auto flex-grow">
+             <div id="details-container" class="p-6 overflow-y-auto flex-grow">
                 <div id="details-content"></div>
              </div>
         </div>
