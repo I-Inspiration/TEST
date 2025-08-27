@@ -1,8 +1,3 @@
-3. `app.js` (核心逻辑)
-这是程序的“大脑”，包含了所有的交互逻辑、数据请求和界面控制。
-
-
-```javascript
 document.addEventListener('DOMContentLoaded', () => {
     // --- 状态变量 ---
     let map;
@@ -11,13 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let provinces = [];
     let cities = [];
     let districts = [];
-    let cityToProvinceMap = {};
 
     // --- DOM 元素缓存 ---
     const dom = {
         map: document.getElementById('map'),
-        locateBtn: document.getElementById('locate-btn'),
-        locateStatus: document.getElementById('locate-status'),
+        provinceSelect: document.getElementById('province-select'),
+        citySelect: document.getElementById('city-select'),
+        districtSelect: document.getElementById('district-select'),
+        confirmLocationBtn: document.getElementById('confirm-location-btn'),
         heartBtn: document.getElementById('heart-btn'),
         breakBtn: document.getElementById('break-btn'),
         backBtn: document.getElementById('back-btn'),
@@ -44,13 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cities = await cityRes.json();
             districts = await distRes.json();
             
-            // 创建一个城市到省份的反向映射，方便查找
-            cities.forEach(city => {
-                const province = provinces.find(p => p.id === city.province_id);
-                if (province) {
-                    cityToProvinceMap[city.name] = province.name;
-                }
-            });
+            populateProvinces(); // 数据加载后直接填充省份
 
         } catch (error) {
             console.error("数据文件加载失败:", error);
@@ -69,40 +59,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 事件绑定 ---
     function attachEventListeners() {
-        dom.locateBtn.addEventListener('click', handleLocation);
+        dom.provinceSelect.addEventListener('change', handleProvinceChange);
+        dom.citySelect.addEventListener('change', handleCityChange);
+        dom.confirmLocationBtn.addEventListener('click', handleConfirmLocation);
         dom.panels.arrows.addEventListener('click', handleArrowSelection);
         dom.heartBtn.addEventListener('click', handleHeartClick);
         dom.breakBtn.addEventListener('click', generateDestination);
         dom.backBtn.addEventListener('click', () => showPanel('arrows'));
     }
 
-    // --- 核心流程 ---
-    function handleLocation() {
-        dom.locateBtn.disabled = true;
-        dom.locateStatus.textContent = '正在获取您的经纬度...';
-        navigator.geolocation.getCurrentPosition(async (position) => {
-            const { latitude, longitude } = position.coords;
-            map.setView([latitude, longitude], 12);
-            L.marker([latitude, longitude]).addTo(map).bindPopup('你在这里！').openPopup();
-            dom.locateStatus.textContent = '定位成功！正在解析省市...';
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=zh`);
-                if (!response.ok) throw new Error();
-                const data = await response.json();
-                const province = data.address.state ? data.address.state.replace(/省|市|自治区|特别行政区/g, '') : "广东";
-                const city = (data.address.city || data.address.county || "深圳市").replace('市', '');
-                userLocation = { province, city };
-                dom.locateStatus.textContent = `当前: ${province}, ${city}`;
-                setTimeout(() => showPanel('arrows'), 1200);
-            } catch {
-                dom.locateStatus.textContent = '无法解析城市，使用默认地点。';
-                setTimeout(() => showPanel('arrows'), 1200);
-            }
-        }, () => {
-            alert('定位失败！将使用默认位置开始。');
-            showPanel('arrows');
+    // --- 核心流程：手动选择地点 ---
+    function populateProvinces() {
+        dom.provinceSelect.innerHTML = '<option value="">请选择省份</option>';
+        provinces.forEach(province => {
+            const option = document.createElement('option');
+            option.value = province.id;
+            option.textContent = province.name;
+            dom.provinceSelect.appendChild(option);
         });
+        // 初始化市和区的下拉框
+        dom.citySelect.innerHTML = '<option value="">请选择城市</option>';
+        dom.districtSelect.innerHTML = '<option value="">请选择区/县</option>';
     }
+
+    function handleProvinceChange(e) {
+        const provinceId = e.target.value;
+        dom.citySelect.innerHTML = '<option value="">请选择城市</option>';
+        dom.districtSelect.innerHTML = '<option value="">请选择区/县</option>';
+        if (provinceId) {
+            const relevantCities = cities.filter(city => city.province_id === provinceId);
+            relevantCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.id;
+                option.textContent = city.name;
+                dom.citySelect.appendChild(option);
+            });
+        }
+    }
+
+    function handleCityChange(e) {
+        const cityId = e.target.value;
+        dom.districtSelect.innerHTML = '<option value="">请选择区/县</option>';
+        if (cityId) {
+            const relevantDistricts = districts.filter(district => district.city_id === cityId);
+            relevantDistricts.forEach(district => {
+                const option = document.createElement('option');
+                option.value = district.id; // 可以存id，也可以存名字，这里用名字方便后续逻辑
+                option.textContent = district.name;
+                dom.districtSelect.appendChild(option);
+            });
+        }
+    }
+    
+    function handleConfirmLocation() {
+        const selectedProvince = provinces.find(p => p.id === dom.provinceSelect.value);
+        const selectedCity = cities.find(c => c.id === dom.citySelect.value);
+
+        if (selectedProvince && selectedCity) {
+            // 更新用户位置
+            userLocation = {
+                province: selectedProvince.name.replace(/省|市|自治区|特别行政区/g, ''),
+                city: selectedCity.name.replace('市', '')
+            };
+            // 跳转到下一步
+            showPanel('arrows');
+        } else {
+            alert('请选择一个完整的省份和城市！');
+        }
+    }
+
 
     function handleArrowSelection(e) {
         const card = e.target.closest('.arrow-card');
@@ -126,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const randomCity = cities[Math.floor(Math.random() * cities.length)];
             destinationHTML = randomCity.name;
         } else if (currentShotType === 'district') {
-            const userCity = cities.find(c => c.name === userLocation.city);
+            const userCity = cities.find(c => c.name.includes(userLocation.city));
             let targetDistricts = [];
             if (userCity) {
                 targetDistricts = districts.filter(d => d.city_id === userCity.id);
