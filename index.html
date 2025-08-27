@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>随机旅行</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -17,8 +16,12 @@
         <div class="card text-center p-8 rounded-2xl max-w-sm mx-4">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">随机旅行</h1>
             <p class="text-gray-600 mb-6">下一站去哪？让命运决定你的旅行！</p>
-            <button id="locate-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">🎯 定位我的位置</button>
-            <p id="locate-status" class="text-sm text-gray-500 mt-2 h-4"></p>
+            <div id="location-form" class="space-y-4">
+                <select id="province-select" class="w-full p-2 border rounded-lg bg-gray-50"></select>
+                <select id="city-select" class="w-full p-2 border rounded-lg bg-gray-50"></select>
+                <select id="district-select" class="w-full p-2 border rounded-lg bg-gray-50"></select>
+            </div>
+            <button id="confirm-location-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 mt-6">出发！</button>
         </div>
     </div>
 
